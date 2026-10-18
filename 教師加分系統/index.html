@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>勇者學園：冒險之塔</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --accent-color: #f59e0b;
+      --text-main: #1e293b;
+      --text-sub: #64748b;
+      --header-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --card-border: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: var(--bg-color);
+      color: var(--text-main);
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--header-bg);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      color: #b45309;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .sync-badge.online { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .sync-badge.connecting { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .sync-badge.offline { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+
+    .class-select-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .class-select-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .class-select-label {
+      font-weight: 700;
+      color: #b45309;
+      font-size: 0.9rem;
+    }
+
+    .class-select-dropdown {
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: 1.5px solid #f59e0b;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      outline: none;
+      min-width: 180px;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    input, select, button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    input, select {
+      background: #ffffff;
+      color: var(--text-main);
+    }
+
+    input:focus, select:focus {
+      border-color: #f59e0b;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    button:active { transform: scale(0.98); }
+
+    .btn-create { background: #059669; color: white; border: none; }
+    .btn-create:hover { background: #047857; }
+    .btn-excel { background: #0284c7; color: white; border: none; }
+    .btn-excel:hover { background: #0369a1; }
+    .btn-sort-rank { background: #4f46e5; color: white; border: none; }
+    .btn-sort-rank:hover { background: #4338ca; }
+    .btn-sort-num { background: #0d9488; color: white; border: none; }
+    .btn-sort-num:hover { background: #0f766e; }
+    .btn-danger { background: #e11d48; color: white; border: none; }
+    .btn-danger:hover { background: #be123c; }
+    .btn-tool { background: #ffffff; color: #334155; border: 1px solid var(--card-border); }
+    .btn-tool:hover { background: #f8fafc; border-color: #94a3b8; }
+    .btn-quest { background: #d97706; color: white; border: none; font-weight: 700; }
+    .btn-quest:hover { background: #b45309; }
+    .btn-tracking { background: #0284c7; color: white; border: none; font-weight: 700; }
+    .btn-tracking:hover { background: #0369a1; }
+    .btn-view-toggle { background: #7c3aed; color: white; border: none; font-weight: 700; }
+    .btn-view-toggle:hover { background: #6d28d9; }
+
+    /* 卡片檢視與明顯加粗描邊 */
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 14px;
+      position: relative;
+      border: 3px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+    }
+    .card.boy { border-color: #38bdf8; background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%); }
+    .card.boy:hover { border-color: #0284c7; }
+    .card.girl { border-color: #f472b6; background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 100%); }
+    .card.girl:hover { border-color: #db2777; }
+
+    .card.max-tier {
+      border-color: #f59e0b !important;
+      animation: warmGoldAura 1.8s infinite alternate;
+    }
+    @keyframes warmGoldAura {
+      from { box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), inset 0 0 6px rgba(251, 191, 36, 0.4); }
+      to { box-shadow: 0 0 25px rgba(251, 191, 36, 0.9), inset 0 0 12px rgba(245, 158, 11, 0.7); }
+    }
+
+    .avatar-stage {
+      width: 100%;
+      max-width: 180px;
+      aspect-ratio: 2 / 3;
+      background: #f8fafc;
+      border-radius: 10px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+    .avatar-stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .tier-tag {
+      position: absolute;
+      bottom: 6px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #b45309;
+      border: 1px solid #f59e0b;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 1px 8px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      z-index: 2;
+    }
+
+    .student-info { text-align: center; width: 100%; }
+    .student-name {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0f172a;
+      cursor: pointer;
+      display: inline-block;
+      margin-bottom: 2px;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .student-name:hover { background: #f1f5f9; color: #d97706; }
+    .student-title { font-size: 0.78rem; color: var(--text-sub); font-weight: 600; min-height: 1.1rem; }
+    .level-badge {
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: #d97706;
+      margin: 4px 0;
+    }
+
+    .exp-bar-bg {
+      width: 100%;
+      height: 7px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 6px 0 10px 0;
+    }
+    .exp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #ec4899, #f59e0b);
+      transition: width 0.3s ease;
+    }
+
+    .controls { display: flex; gap: 6px; width: 100%; }
+    .btn-score {
+      flex: 1;
+      padding: 6px 0;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      justify-content: center;
+      border: none;
+      font-weight: 700;
+    }
+    .btn-minus { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+    .btn-minus:hover { background: #fecaca; }
+    .btn-plus-1 { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .btn-plus-1:hover { background: #bbf7d0; }
+    .btn-plus-custom { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+    .btn-plus-custom:hover { background: #fde68a; }
+
+    .btn-delete {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      padding: 2px 5px;
+      border: none;
+      border-radius: 4px;
+      z-index: 2;
+    }
+    .btn-delete:hover { background: #fee2e2; color: #ef4444; }
+
+    /* 表格檢視 */
+    .table-container {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      background: #f8fafc;
+      color: #b45309;
+      font-weight: 800;
+    }
+    .table-row-clickable { cursor: pointer; }
+    .table-row-clickable:hover td { background: #f8fafc; }
+
+    /* Modal 彈窗通用 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(2px);
+    }
+    .modal-box {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      width: 90%;
+      max-width: 480px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+    .modal-header h3 { color: #b45309; font-size: 1.1rem; font-weight: 800; }
+    .modal-close {
+      background: transparent;
+      color: #94a3b8;
+      font-size: 1.2rem;
+      border: none;
+    }
+    .modal-close:hover { color: #0f172a; }
+
+    .quest-section {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+    .quest-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+    .editable-input {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #1e293b;
+      outline: none;
+    }
+    .editable-input:focus { border-color: #f59e0b; background: #ffffff; }
+
+    .reason-btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .btn-reason-choice {
+      background: #f8fafc;
+      color: #334155;
+      border: 1px solid var(--card-border);
+      padding: 9px;
+      border-radius: 8px;
+      font-weight: 700;
+      justify-content: center;
+    }
+    .btn-reason-choice:hover {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #b45309;
+    }
+
+    .log-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 200px;
+      margin: 6px 0;
+    }
+    .log-item {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+    .log-info { display: flex; align-items: center; gap: 8px; }
+    .log-time { color: #94a3b8; font-size: 0.7rem; }
+    .log-reason { color: #1e293b; font-weight: 600; }
+    .log-action { display: flex; align-items: center; gap: 8px; }
+    .log-delta { font-weight: 800; }
+    .log-plus { color: #16a34a; }
+    .log-minus { color: #dc2626; }
+    .btn-del-log {
+      background: transparent;
+      color: #94a3b8;
+      border: none;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .btn-del-log:hover { background: #fee2e2; color: #dc2626; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="top-bar">
+      <h1>勇者學園：冒險之塔</h1>
+
+      <div id="syncBadge" class="sync-badge connecting">
+        <span id="syncText">連線中...</span>
+      </div>
+      
+      <div class="input-group">
+        <input type="text" id="classNameInput" placeholder="新班級名稱" style="width: 110px;">
+        <button class="btn-create" onclick="addClass()">建立班級</button>
+      </div>
+
+      <div class="input-group">
+        <input type="text" id="stuName" placeholder="座號. 姓名" style="width: 130px;">
+        <select id="stuGender">
+          <option value="boy">見習劍士 (男)</option>
+          <option value="girl">魔法學徒 (女)</option>
+        </select>
+        <button class="btn-create" onclick="addStudent()">加入學生</button>
+      </div>
+    </div>
+
+    <div class="class-select-bar">
+      <div class="class-select-left">
+        <span class="class-select-label">當前班級：</span>
+        <select id="classSelect" class="class-select-dropdown" onchange="switchClass(this.value)"></select>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button class="btn-tracking" onclick="openTrackingModal()">📋 未完成名單</button>
+        <button class="btn-quest" onclick="openQuestManagerModal()">🎯 任務列表設定</button>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <div style="display:flex; gap:6px; flex-wrap: wrap;">
+        <button class="btn-view-toggle" id="viewToggleBtn" onclick="toggleViewMode()">切換為表格檢視</button>
+        <button class="btn-sort-rank" onclick="sortStudents()">戰力榜排序</button>
+        <button class="btn-sort-num" onclick="sortByNumber()">座號排序</button>
+        <button class="btn-excel" onclick="triggerExcelUpload()">匯入 Excel</button>
+        <button class="btn-tool" onclick="openScoreModal(null, true)">全班加分</button>
+        <button class="btn-danger" onclick="deleteCurrentClass()">刪除班級</button>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap: wrap;">
+        <button class="btn-tool" onclick="exportData()">匯出備份</button>
+        <button class="btn-tool" onclick="importData()">讀取檔案</button>
+      </div>
+    </div>
+  </header>
+
+  <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" multiple style="display: none;" onchange="handleExcelFiles(event)">
+
+  <main id="mainContainer">
+    <div class="student-grid" id="grid"></div>
+    <div class="table-container" id="tableWrapper" style="display: none;">
+      <table>
+        <thead>
+          <tr>
+            <th>座號/姓名</th>
+            <th>性別</th>
+            <th>等級</th>
+            <th>稱號</th>
+            <th>變更分數</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="studentTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- 🎯 任務列表設定 Modal -->
+  <div id="questManagerModal" class="modal-overlay" style="display: none;" onclick="closeQuestManagerModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🎯 班級任務列表設定</h3>
+        <button class="modal-close" onclick="closeQuestManagerModal()">✖</button>
+      </div>
+      
+      <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 8px;">新增任務或直接點擊下方文字與點數進行修改：</p>
+      
+      <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+        <input type="text" id="newQuestTitle" placeholder="任務名稱 (例如: 完成習作)" style="flex: 1;">
+        <input type="number" id="newQuestReward" placeholder="點數" value="2" style="width: 70px;">
+        <button class="btn-create" onclick="addGlobalQuest()">新增任務</button>
+      </div>
+
+      <div style="font-size: 0.85rem; font-weight: 700; color: #b45309; margin-bottom: 4px;">現有任務列表 (可直接編輯)：</div>
+      <div id="globalQuestList" class="quest-section" style="max-height: 240px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <!-- 📋 獨立未完成名單 Modal -->
+  <div id="trackingModal" class="modal-overlay" style="display: none;" onclick="closeTrackingModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📋 未完成特定任務學生追蹤</h3>
+        <button class="modal-close" onclick="closeTrackingModal()">✖</button>
+      </div>
+      
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 0.82rem; color: var(--text-sub); display: block; margin-bottom: 4px;">選擇要檢查的任務：</label>
+        <select id="trackingQuestSelect" onchange="renderUnfinishedStudentsList()" style="width: 100%;"></select>
+      </div>
+      
+      <div id="unfinishedStudentsList" style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; padding: 12px; font-size: 0.9rem; color: #9f1239; max-height: 250px; overflow-y: auto;">
+        請選擇上方任務以追蹤未完成名單
+      </div>
+    </div>
+  </div>
+
+  <!-- ⚡ 整合型加分 / 減分 / +? 點數與原因選擇 Modal -->
+  <div id="scoreModal" class="modal-overlay" style="display: none;" onclick="closeScoreModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="scoreModalTitle">調整分數</h3>
+        <button class="modal-close" onclick="closeScoreModal()">✖</button>
+      </div>
+
+      <!-- 自訂點數輸入列 -->
+      <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px;">
+        <label style="font-size: 0.8rem; color: var(--text-sub); display: block; margin-bottom: 4px; font-weight: 700;">調整點數 (正數加分，負數減分)：</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="number" id="customDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;">
+          <span style="font-size: 0.85rem; color: var(--text-sub); align-self: center;">分</span>
+        </div>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 4px;">選擇加分/減分原因：</p>
+      
+      <div class="reason-btn-grid">
+        <button class="btn-reason-choice" onclick="submitScoreWithReason('踴躍發言')">踴躍發言</button>
+        <button class="btn-reason-choice" onclick="submitScoreWithReason('回答正確')">回答正確</button>
+      </div>
+
+      <div style="margin-top: 6px;">
+        <label style="font-size: 0.78rem; color: var(--text-sub); display: block; margin-bottom: 3px;">其他自訂原因：</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="customReasonInput" placeholder="自行輸入原因..." style="flex: 1;" onkeydown="if(event.key==='Enter') submitScoreWithCustomReason()">
+          <button class="btn-create" onclick="submitScoreWithCustomReason()">確認送出</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 學生冒險歷程與任務勾選 Modal -->
+  <div id="logModal" class="modal-overlay" style="display: none;" onclick="closeLogModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modalStudentTitle">冒險歷程</h3>
+        <button class="modal-close" onclick="closeLogModal()">✖</button>
+      </div>
+
+      <div class="quest-section">
+        <div style="font-size: 0.82rem; color: #b45309; margin-bottom: 6px; font-weight: 800;">🎯 班級任務完成狀態 (勾選自動加分)：</div>
+        <div id="studentQuestChecklist" style="display: flex; flex-direction: column; gap: 4px; max-height: 130px; overflow-y: auto;"></div>
+      </div>
+
+      <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 8px;">
+        <div style="font-size: 0.8rem; color: #b45309; margin-bottom: 4px; font-weight: 800;">手動補登歷程：</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <input type="number" id="manualLogDelta" placeholder="點數 (如 5)" style="width: 100px;">
+          <input type="text" id="manualLogReason" placeholder="輸入原因" style="flex: 1; min-width: 120px;">
+          <button class="btn-create" onclick="addManualLog()">新增</button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.8rem; font-weight: 800; color: #b45309; margin-bottom: 4px;">加扣分歷程紀錄：</div>
+      <div class="log-list" id="modalLogList"></div>
+    </div>
+  </div>
+
+  <script>
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyAP9x6hmhOHt5XNL9PIIFxl3pb_COdPyEA",
+      authDomain: "class-hero-c6b5d.firebaseapp.com",
+      databaseURL: "https://class-hero-c6b5d-default-rtdb.firebaseio.com",
+      projectId: "class-hero-c6b5d",
+      storageBucket: "class-hero-c6b5d.firebasestorage.app",
+      messagingSenderId: "674850395056",
+      appId: "1:674850395056:web:9f16ef6db879a519de7c75",
+      measurementId: "G-VNYXYT9D07"
+    };
+
+    let currentViewMode = 'grid';
+    let currentScoreAction = null; // { studentId, isBatch }
+    let viewingStudentId = null;
+
+    const EVOLUTION_TIERS = [
+      { lv: 0,   boy: "見習劍士", girl: "魔法學徒" },
+      { lv: 20,  boy: "菁英劍士", girl: "見習魔法師" },
+      { lv: 40,  boy: "初級騎士", girl: "魔法師" },
+      { lv: 60,  boy: "重裝騎士", girl: "魔導士" },
+      { lv: 80,  boy: "精鋼騎士", girl: "精靈魔導士" },
+      { lv: 100, boy: "皇家騎士", girl: "元素支配者" },
+      { lv: 120, boy: "聖殿騎士", girl: "聖殿審判官" },
+      { lv: 140, boy: "屠龍騎士", girl: "聖殿祭司" },
+      { lv: 160, boy: "破軍領主", girl: "聖殿賢者" },
+      { lv: 180, boy: "護國將軍", girl: "聖殿聖女" },
+      { lv: 200, boy: "傳奇元帥", girl: "聖光女皇" }
+    ];
+
+    const HERO_AVATARS = {
+      boy: [
+        "images/boy_0.png", "images/boy_20.png", "images/boy_40.png", "images/boy_60.png",
+        "images/boy_80.png", "images/boy_100.png", "images/boy_120.png", "images/boy_140.png",
+        "images/boy_160.png", "images/boy_180.png", "images/boy_200.png"
+      ],
+      girl: [
+        "images/girl_0.png", "images/girl_20.png", "images/girl_40.png", "images/girl_60.png",
+        "images/girl_80.png", "images/girl_100.png", "images/girl_120.png", "images/girl_140.png",
+        "images/girl_160.png", "images/girl_180.png", "images/girl_200.png"
+      ]
+    };
+
+    function normalizeData(raw) {
+      if (!raw || typeof raw !== 'object' || !raw.classes) {
+        return { currentClass: "", updatedAt: 0, classes: {} };
+      }
+      let currentClass = raw.currentClass || "";
+      let classes = {};
+
+      Object.keys(raw.classes).forEach(cName => {
+        let cVal = raw.classes[cName];
+        let students = Array.isArray(cVal.students) ? cVal.students : (cVal.students ? Object.values(cVal.students) : []);
+        let quests = Array.isArray(cVal.quests) ? cVal.quests : [
+          { id: 1, title: "完成習作", reward: 2 },
+          { id: 2, title: "完成筆記", reward: 3 }
+        ];
+
+        classes[cName] = {
+          name: cName,
+          createdAt: cVal.createdAt || Date.now(),
+          quests: quests,
+          students: students
+        };
+      });
+
+      const keys = Object.keys(classes);
+      if (keys.length > 0 && !classes[currentClass]) {
+        currentClass = keys[0];
+      }
+      return {
+        currentClass: currentClass,
+        updatedAt: raw.updatedAt || 0,
+        classes: classes
+      };
+    }
+
+    function createInitialData() {
+      return {
+        currentClass: "三年甲班",
+        updatedAt: Date.now(),
+        classes: {
+          "三年甲班": {
+            name: "三年甲班",
+            createdAt: Date.now(),
+            quests: [
+              { id: 1, title: "完成習作", reward: 2 },
+              { id: 2, title: "完成筆記", reward: 3 }
+            ],
+            students: [
+              { id: 1, name: "01. 林小明", gender: "boy", level: 10, logs: [], completedQuests: [] },
+              { id: 2, name: "02. 陳美美", gender: "girl", level: 45, logs: [], completedQuests: [] }
+            ]
+          }
+        }
+      };
+    }
+
+    const localCache = localStorage.getItem('hero_quest_layered_v7');
+    let systemData = localCache ? normalizeData(JSON.parse(localCache)) : { currentClass: "", updatedAt: 0, classes: {} };
+
+    let fbDB = null;
+    let isCloudActive = false;
+    let isSaving = false;
+    let hasLoadedCloudOnce = false;
+
+    async function initCloudSync() {
+      try {
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        const auth = firebase.auth();
+        if (!auth.currentUser) await auth.signInAnonymously();
+
+        fbDB = firebase.database();
+        isCloudActive = true;
+
+        fbDB.ref('classroom_data').on('value', snapshot => {
+          if (isSaving) return;
+          hasLoadedCloudOnce = true;
+
+          if (snapshot.exists()) {
+            systemData = normalizeData(snapshot.val());
+            localStorage.setItem('hero_quest_layered_v7', JSON.stringify(systemData));
+            renderClassSelector();
+            renderStudents();
+            updateSyncUI(true, "雲端已同步");
+          } else {
+            if (!systemData.classes || Object.keys(systemData.classes).length === 0) {
+              systemData = createInitialData();
+            }
+            saveData();
+            renderClassSelector();
+            renderStudents();
+            updateSyncUI(true, "初次建立完成");
+          }
+        }, () => updateSyncUI(false, "連線權限異常"));
+
+      } catch (e) {
+        updateSyncUI(false, "連線失敗");
+      }
+    }
+
+    function updateSyncUI(online, text) {
+      const badge = document.getElementById('syncBadge');
+      const textSpan = document.getElementById('syncText');
+      badge.className = online ? "sync-badge online" : "sync-badge offline";
+      textSpan.textContent = text;
+    }
+
+    function getCurrentClassObj() {
+      if (!systemData.classes || !systemData.classes[systemData.currentClass]) return { quests: [], students: [] };
+      const cls = systemData.classes[systemData.currentClass];
+      if (!Array.isArray(cls.quests)) cls.quests = [];
+      if (!Array.isArray(cls.students)) cls.students = cls.students ? Object.values(cls.students) : [];
+      return cls;
+    }
+
+    function getCurrentStudents() {
+      return getCurrentClassObj().students;
+    }
+
+    function saveData() {
+      if (!hasLoadedCloudOnce && isCloudActive) return;
+      systemData.updatedAt = Date.now();
+      localStorage.setItem('hero_quest_layered_v7', JSON.stringify(systemData));
+      
+      if (isCloudActive && fbDB) {
+        isSaving = true;
+        fbDB.ref('classroom_data').set(systemData)
+          .then(() => { isSaving = false; updateSyncUI(true, "雲端已同步"); })
+          .catch(() => { isSaving = false; updateSyncUI(false, "儲存權限被拒"); });
+      }
+    }
+
+    function playLevelUpSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(554.37, now + 0.1);
+        osc.frequency.setValueAtTime(659.25, now + 0.2);
+        osc.frequency.setValueAtTime(880, now + 0.3);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc.start(now);
+        osc.stop(now + 0.6);
+      } catch (e) {}
+    }
+
+    function renderCustomAvatar(gender, level) {
+      const tier = Math.min(Math.floor(level / 20), 10);
+      const avatarSrc = (HERO_AVATARS[gender] && HERO_AVATARS[gender][tier]) ? HERO_AVATARS[gender][tier] : "";
+      const roleTitle = EVOLUTION_TIERS[tier][gender];
+
+      return `
+        <img src="${avatarSrc}" alt="${roleTitle}" 
+             onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc; color:#64748b; font-size:0.8rem; text-align:center; padding:8px;">
+          <span style="font-size:1.5rem; margin-bottom:4px; color:#f59e0b;">⚔️</span>
+          <span style="font-weight:700; color:#334155;">${roleTitle}</span>
+          <span style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">[720×1080 圖檔未放置]</span>
+        </div>
+      `;
+    }
+
+    function toggleViewMode() {
+      currentViewMode = currentViewMode === 'grid' ? 'table' : 'grid';
+      document.getElementById('viewToggleBtn').textContent = currentViewMode === 'grid' ? '切換為表格檢視' : '切換為卡片檢視';
+      renderStudents();
+    }
+
+    function renderClassSelector() {
+      const select = document.getElementById('classSelect');
+      if (!select) return;
+      select.innerHTML = '';
+      
+      const classNames = Object.keys(systemData.classes);
+      if (classNames.length === 0) return;
+
+      classNames.forEach(clsName => {
+        const clsObj = systemData.classes[clsName];
+        const count = clsObj && clsObj.students ? (Array.isArray(clsObj.students) ? clsObj.students.length : Object.keys(clsObj.students).length) : 0;
+        const opt = document.createElement('option');
+        opt.value = clsName;
+        opt.textContent = `${clsName} (${count} 人)`;
+        if (clsName === systemData.currentClass) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function switchClass(clsName) {
+      systemData.currentClass = clsName;
+      saveData();
+      renderClassSelector();
+      renderStudents();
+    }
+
+    function addClass() {
+      const input = document.getElementById('classNameInput');
+      const name = input.value.trim();
+      if (!name) return alert("請輸入班級名稱！");
+      if (systemData.classes[name]) return alert("此班級已存在！");
+
+      systemData.classes[name] = {
+        name: name,
+        createdAt: Date.now(),
+        quests: [
+          { id: 1, title: "完成習作", reward: 2 },
+          { id: 2, title: "完成筆記", reward: 3 }
+        ],
+        students: []
+      };
+      systemData.currentClass = name;
+      input.value = '';
+      renderClassSelector();
+      renderStudents();
+      saveData();
+    }
+
+    function deleteCurrentClass() {
+      const clsName = systemData.currentClass;
+      if (Object.keys(systemData.classes).length <= 1) return alert("至少需保留一個班級！");
+      if (confirm(`確定要刪除【${clsName}】嗎？`)) {
+        delete systemData.classes[clsName];
+        systemData.currentClass = Object.keys(systemData.classes)[0];
+        saveData();
+        renderClassSelector();
+        renderStudents();
+      }
+    }
+
+    // 🎯 任務管理
+    function openQuestManagerModal() {
+      renderGlobalQuestList();
+      document.getElementById('questManagerModal').style.display = 'flex';
+    }
+
+    function closeQuestManagerModal() {
+      document.getElementById('questManagerModal').style.display = 'none';
+    }
+
+    function addGlobalQuest() {
+      const titleInput = document.getElementById('newQuestTitle');
+      const rewardInput = document.getElementById('newQuestReward');
+      const title = titleInput.value.trim();
+      const reward = parseInt(rewardInput.value, 10) || 1;
+
+      if (!title) return alert("請輸入任務名稱！");
+
+      const cls = getCurrentClassObj();
+      cls.quests.push({ id: Date.now(), title: title, reward: reward });
+
+      titleInput.value = '';
+      rewardInput.value = '2';
+      saveData();
+      renderGlobalQuestList();
+    }
+
+    function deleteGlobalQuest(questId) {
+      if (confirm("確定要刪除此任務嗎？")) {
+        const cls = getCurrentClassObj();
+        cls.quests = cls.quests.filter(q => q.id !== questId);
+        saveData();
+        renderGlobalQuestList();
+      }
+    }
+
+    function updateQuestField(questId, field, value) {
+      const cls = getCurrentClassObj();
+      const quest = cls.quests.find(q => q.id === questId);
+      if (!quest) return;
+
+      if (field === 'title') quest.title = value.trim() || "未命名任務";
+      else if (field === 'reward') quest.reward = parseInt(value, 10) || 0;
+      saveData();
+    }
+
+    function renderGlobalQuestList() {
+      const listEl = document.getElementById('globalQuestList');
+      listEl.innerHTML = '';
+      const cls = getCurrentClassObj();
+
+      if (cls.quests.length === 0) {
+        listEl.innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 10px;">尚未設定任務。</div>`;
+        return;
+      }
+
+      cls.quests.forEach(q => {
+        const div = document.createElement('div');
+        div.className = 'quest-item-row';
+        div.innerHTML = `
+          <div style="display: flex; gap: 6px; align-items: center; flex: 1; margin-right: 8px;">
+            <input type="text" class="editable-input" style="flex: 1;" value="${q.title}" onchange="updateQuestField(${q.id}, 'title', this.value)">
+            <input type="number" class="editable-input" style="width: 65px;" value="${q.reward}" onchange="updateQuestField(${q.id}, 'reward', this.value)">
+            <span style="font-size: 0.75rem; color: var(--text-sub);">分</span>
+          </div>
+          <button class="btn-danger" style="padding: 2px 6px; font-size: 0.75rem;" onclick="deleteGlobalQuest(${q.id})">刪除</button>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    // 📋 未完成名單
+    function openTrackingModal() {
+      populateTrackingSelect();
+      document.getElementById('trackingModal').style.display = 'flex';
+    }
+
+    function closeTrackingModal() {
+      document.getElementById('trackingModal').style.display = 'none';
+    }
+
+    function populateTrackingSelect() {
+      const select = document.getElementById('trackingQuestSelect');
+      select.innerHTML = '<option value="">-- 請選擇要追蹤的任務 --</option>';
+      const cls = getCurrentClassObj();
+
+      cls.quests.forEach(q => {
+        const opt = document.createElement('option');
+        opt.value = q.id;
+        opt.textContent = q.title + ` (+${q.reward}分)`;
+        select.appendChild(opt);
+      });
+      document.getElementById('unfinishedStudentsList').innerHTML = '請選擇上方任務以追蹤未完成名單';
+    }
+
+    function renderUnfinishedStudentsList() {
+      const questId = parseInt(document.getElementById('trackingQuestSelect').value, 10);
+      const container = document.getElementById('unfinishedStudentsList');
+      if (!questId) {
+        container.innerHTML = '請選擇上方任務以追蹤未完成名單';
+        return;
+      }
+
+      const students = getCurrentStudents();
+      const unfinished = students.filter(stu => {
+        const completed = Array.isArray(stu.completedQuests) ? stu.completedQuests : [];
+        return !completed.includes(questId);
+      });
+
+      if (unfinished.length === 0) {
+        container.innerHTML = '🎉 太棒了！全班都已經完成這個任務！';
+        container.style.background = '#ecfdf5';
+        container.style.borderColor = '#a7f3d0';
+        container.style.color = '#047857';
+      } else {
+        container.style.background = '#fff1f2';
+        container.style.borderColor = '#fecdd3';
+        container.style.color = '#9f1239';
+        container.innerHTML = `<strong>尚未完成人數 (${unfinished.length}人)：</strong><br><br>` + 
+          unfinished.map(s => `・${s.name}`).join('<br>');
+      }
+    }
+
+    // ⚡ 整合型評分視窗觸發
+    function openScoreModal(studentId, isBatch = false, defaultDelta = 1) {
+      currentScoreAction = { studentId, isBatch };
+      document.getElementById('customDeltaInput').value = defaultDelta;
+      document.getElementById('customReasonInput').value = '';
+
+      if (isBatch) {
+        document.getElementById('scoreModalTitle').textContent = `全班調整分數`;
+      } else {
+        const stu = getCurrentStudents().find(s => s.id === studentId);
+        if (stu) document.getElementById('scoreModalTitle').textContent = `【${stu.name}】調整分數`;
+      }
+      document.getElementById('scoreModal').style.display = 'flex';
+    }
+
+    function closeScoreModal() {
+      document.getElementById('scoreModal').style.display = 'none';
+      currentScoreAction = null;
+    }
+
+    function submitScoreWithReason(reason) {
+      const delta = parseInt(document.getElementById('customDeltaInput').value, 10);
+      if (isNaN(delta) || delta === 0) return alert("請輸入有效的非零點數！");
+      applyScoreAction(delta, reason);
+    }
+
+    function submitScoreWithCustomReason() {
+      const delta = parseInt(document.getElementById('customDeltaInput').value, 10);
+      if (isNaN(delta) || delta === 0) return alert("請輸入有效的非零點數！");
+      const input = document.getElementById('customReasonInput');
+      const reason = input.value.trim() || (delta > 0 ? "課堂表現" : "扣分");
+      applyScoreAction(delta, reason);
+    }
+
+    function applyScoreAction(delta, reason) {
+      if (!currentScoreAction) return;
+      const { studentId, isBatch } = currentScoreAction;
+
+      if (isBatch) {
+        getCurrentStudents().forEach(stu => {
+          stu.level = Math.max(0, Math.min(200, stu.level + delta));
+          if (!Array.isArray(stu.logs)) stu.logs = [];
+          stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+        });
+      } else {
+        const stu = getCurrentStudents().find(s => s.id === studentId);
+        if (stu) {
+          const oldTier = Math.floor(stu.level / 20);
+          stu.level = Math.max(0, Math.min(200, stu.level + delta));
+          const newTier = Math.floor(stu.level / 20);
+          if (!Array.isArray(stu.logs)) stu.logs = [];
+          stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+          if (newTier > oldTier && delta > 0) playLevelUpSound();
+        }
+      }
+      closeScoreModal();
+      saveData();
+      renderStudents();
+    }
+
+    function renderStudents() {
+      const grid = document.getElementById('grid');
+      const tableWrapper = document.getElementById('tableWrapper');
+      const tableBody = document.getElementById('studentTableBody');
+      const students = getCurrentStudents();
+
+      if (currentViewMode === 'grid') {
+        grid.style.display = 'grid';
+        tableWrapper.style.display = 'none';
+        grid.innerHTML = '';
+
+        if (students.length === 0) {
+          grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sub); padding: 60px;">目前尚無學生名單。</div>`;
+          return;
+        }
+
+        students.forEach(stu => {
+          const tier = Math.min(Math.floor(stu.level / 20), 10);
+          const title = EVOLUTION_TIERS[tier][stu.gender];
+          const isMax = stu.level >= 200;
+          const progressPercent = Math.min(100, (stu.level / 200) * 100);
+
+          const card = document.createElement('div');
+          card.className = `card ${stu.gender} ${isMax ? 'max-tier' : ''}`;
+          card.onclick = () => viewStudentLogs(stu.id);
+
+          card.innerHTML = `
+            <button class="btn-delete" title="刪除學生" onclick="event.stopPropagation(); deleteStudent(${stu.id})">✖</button>
+            
+            <div class="avatar-stage">
+              ${renderCustomAvatar(stu.gender, stu.level)}
+              <div class="tier-tag">STAGE ${tier}</div>
+            </div>
+
+            <div class="student-info">
+              <span class="student-name" title="點擊修改姓名" onclick="event.stopPropagation(); editStudentName(${stu.id})">${stu.name}</span>
+              <div class="student-title">${title}</div>
+              <div class="level-badge">Lv. ${stu.level}</div>
+            </div>
+
+            <div class="exp-bar-bg">
+              <div class="exp-bar-fill" style="width: ${progressPercent}%;"></div>
+            </div>
+
+            <div class="controls">
+              <button class="btn-score btn-minus" title="扣分" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, -1)">-1</button>
+              <button class="btn-score btn-plus-1" title="加分" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 1)">+1</button>
+              <button class="btn-score btn-plus-custom" title="自訂點數" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 5)">+?</button>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+
+      } else {
+        grid.style.display = 'none';
+        tableWrapper.style.display = 'block';
+        tableBody.innerHTML = '';
+
+        if (students.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-sub); padding: 40px;">目前尚無學生名單。</td></tr>`;
+          return;
+        }
+
+        students.forEach(stu => {
+          const tier = Math.min(Math.floor(stu.level / 20), 10);
+          const title = EVOLUTION_TIERS[tier][stu.gender];
+          const genderText = stu.gender === 'boy' ? '男' : '女';
+
+          const tr = document.createElement('tr');
+          tr.className = 'table-row-clickable';
+          tr.onclick = () => viewStudentLogs(stu.id);
+
+          tr.innerHTML = `
+            <td><strong style="cursor: pointer; color: #0f172a;" onclick="event.stopPropagation(); editStudentName(${stu.id})">${stu.name}</strong></td>
+            <td>${genderText}</td>
+            <td><strong style="color: #d97706;">Lv. ${stu.level}</strong></td>
+            <td style="color: var(--text-sub);">${title}</td>
+            <td>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn-score btn-minus" style="padding: 2px 8px;" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, -1)">-1</button>
+                <button class="btn-score btn-plus-1" style="padding: 2px 8px;" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 1)">+1</button>
+                <button class="btn-score btn-plus-custom" style="padding: 2px 8px;" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 5)">+?</button>
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn-danger" style="padding: 2px 6px;" onclick="event.stopPropagation(); deleteStudent(${stu.id})">刪除</button>
+              </div>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+    }
+
+    // 📜 學生冒險歷程與任務勾選
+    function viewStudentLogs(studentId) {
+      const stu = getCurrentStudents().find(s => s.id === studentId);
+      if (!stu) return;
+
+      viewingStudentId = studentId;
+      document.getElementById('modalStudentTitle').textContent = `【${stu.name}】冒險歷程`;
+      document.getElementById('manualLogDelta').value = '';
+      document.getElementById('manualLogReason').value = '';
+
+      renderStudentQuestChecklist(stu);
+      renderModalLogList(stu);
+      document.getElementById('logModal').style.display = 'flex';
+    }
+
+    function renderStudentQuestChecklist(stu) {
+      const container = document.getElementById('studentQuestChecklist');
+      container.innerHTML = '';
+      const cls = getCurrentClassObj();
+
+      if (cls.quests.length === 0) {
+        container.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-sub);">尚未設定任何班級任務。</span>`;
+        return;
+      }
+
+      if (!Array.isArray(stu.completedQuests)) stu.completedQuests = [];
+
+      cls.quests.forEach(q => {
+        const isChecked = stu.completedQuests.includes(q.id);
+        const div = document.createElement('div');
+        div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:0.85rem;";
+        div.innerHTML = `
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleStudentQuest(${stu.id}, ${q.id}, this.checked)">
+            <span>${q.title} (+${q.reward}分)</span>
+          </label>
+          <span style="font-size:0.75rem; color:${isChecked ? '#16a34a' : '#94a3b8'}; font-weight:700;">${isChecked ? '已完成' : '未完成'}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function toggleStudentQuest(studentId, questId, isChecked) {
+      const stu = getCurrentStudents().find(s => s.id === studentId);
+      if (!stu) return;
+      const cls = getCurrentClassObj();
+      const quest = cls.quests.find(q => q.id === questId);
+      if (!quest) return;
+
+      if (!Array.isArray(stu.completedQuests)) stu.completedQuests = [];
+
+      if (isChecked) {
+        if (!stu.completedQuests.includes(questId)) stu.completedQuests.push(questId);
+        stu.level = Math.max(0, Math.min(200, stu.level + quest.reward));
+        if (!Array.isArray(stu.logs)) stu.logs = [];
+        stu.logs.unshift({
+          id: Date.now() + Math.random(),
+          time: Date.now(),
+          delta: quest.reward,
+          reason: `完成任務：${quest.title}`
+        });
+      } else {
+        stu.completedQuests = stu.completedQuests.filter(id => id !== questId);
+        stu.level = Math.max(0, Math.min(200, stu.level - quest.reward));
+        if (!Array.isArray(stu.logs)) stu.logs = [];
+        stu.logs.unshift({
+          id: Date.now() + Math.random(),
+          time: Date.now(),
+          delta: -quest.reward,
+          reason: `取消任務：${quest.title}`
+        });
+      }
+
+      saveData();
+      renderStudents();
+      renderStudentQuestChecklist(stu);
+    }
+
+    function renderModalLogList(stu) {
+      const listEl = document.getElementById('modalLogList');
+      listEl.innerHTML = '';
+      const logs = Array.isArray(stu.logs) ? stu.logs : [];
+
+      if (logs.length === 0) {
+        listEl.innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 10px;">尚無任何歷程紀錄。</div>`;
+        return;
+      }
+
+      logs.forEach((log, index) => {
+        const dateStr = new Date(log.time).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const isPlus = log.delta > 0;
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        item.innerHTML = `
+          <div class="log-info">
+            <span class="log-time">${dateStr}</span>
+            <span class="log-reason">${log.reason}</span>
+          </div>
+          <div class="log-action">
+            <span class="log-delta ${isPlus ? 'log-plus' : 'log-minus'}">${isPlus ? '+' : ''}${log.delta}</span>
+            <button class="btn-del-log" title="刪除" onclick="deleteSingleLog(${index})">✖</button>
+          </div>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function addManualLog() {
+      if (!viewingStudentId) return;
+      const stu = getCurrentStudents().find(s => s.id === viewingStudentId);
+      if (!stu) return;
+
+      const delta = parseInt(document.getElementById('manualLogDelta').value, 10);
+      if (isNaN(delta) || delta === 0) return alert("請輸入有效的非零點數！");
+      const reason = document.getElementById('manualLogReason').value.trim() || "手動登錄";
+
+      stu.level = Math.max(0, Math.min(200, stu.level + delta));
+      if (!Array.isArray(stu.logs)) stu.logs = [];
+      stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+
+      document.getElementById('manualLogDelta').value = '';
+      document.getElementById('manualLogReason').value = '';
+      saveData();
+      renderStudents();
+      renderModalLogList(stu);
+    }
+
+    function deleteSingleLog(index) {
+      if (!viewingStudentId) return;
+      const stu = getCurrentStudents().find(s => s.id === viewingStudentId);
+      if (!stu || !stu.logs || !stu.logs[index]) return;
+
+      const log = stu.logs[index];
+      if (confirm(`確定要刪除「${log.reason} (${log.delta > 0 ? '+' : ''}${log.delta})」？將同步還原點數。`)) {
+        stu.level = Math.max(0, Math.min(200, stu.level - log.delta));
+        stu.logs.splice(index, 1);
+        saveData();
+        renderStudents();
+        renderModalLogList(stu);
+        renderStudentQuestChecklist(stu);
+      }
+    }
+
+    function closeLogModal() {
+      document.getElementById('logModal').style.display = 'none';
+      viewingStudentId = null;
+    }
+
+    function addStudent() {
+      const nameInput = document.getElementById('stuName');
+      const genderSelect = document.getElementById('stuGender');
+      const name = nameInput.value.trim();
+      if (!name) return alert("請輸入學生姓名或座號！");
+
+      getCurrentStudents().push({
+        id: Date.now(),
+        name: name,
+        gender: genderSelect.value,
+        level: 0,
+        logs: [],
+        completedQuests: []
+      });
+
+      nameInput.value = '';
+      saveData();
+      renderClassSelector();
+      renderStudents();
+    }
+
+    function editStudentName(id) {
+      const stu = getCurrentStudents().find(s => s.id === id);
+      if (!stu) return;
+      const newName = prompt(`修改姓名：`, stu.name);
+      if (newName !== null) {
+        const trimmed = newName.trim();
+        if (trimmed && trimmed !== stu.name) {
+          stu.name = trimmed;
+          saveData();
+          renderStudents();
+        }
+      }
+    }
+
+    function deleteStudent(id) {
+      if (confirm("確定要刪除這位學生嗎？")) {
+        const cls = systemData.classes[systemData.currentClass];
+        if (cls) {
+          cls.students = cls.students.filter(s => s.id !== id);
+          saveData();
+          renderClassSelector();
+          renderStudents();
+        }
+      }
+    }
+
+    function sortStudents() {
+      getCurrentStudents().sort((a, b) => b.level - a.level);
+      saveData();
+      renderStudents();
+    }
+
+    function extractNumber(str) {
+      const match = (str || '').match(/\d+/);
+      return match ? parseInt(match[0], 10) : null;
+    }
+
+    function sortByNumber() {
+      getCurrentStudents().sort((a, b) => {
+        const numA = extractNumber(a.name);
+        const numB = extractNumber(b.name);
+        if (numA !== null && numB !== null) {
+          if (numA !== numB) return numA - numB;
+          return a.name.localeCompare(b.name, 'zh-Hant');
+        }
+        if (numA !== null) return -1;
+        if (numB !== null) return 1;
+        return a.name.localeCompare(b.name, 'zh-Hant');
+      });
+      saveData();
+      renderStudents();
+    }
+
+    function parseWorksheetToStudents(worksheet) {
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      if (!rawRows || rawRows.length === 0) return [];
+
+      let headerRowIdx = 0;
+      let colName = -1, colNo = -1, colGender = -1;
+
+      for (let i = 0; i < Math.min(rawRows.length, 5); i++) {
+        const row = rawRows[i].map(c => String(c || '').trim());
+        for (let j = 0; j < row.length; j++) {
+          const val = row[j];
+          if (/^(姓名|名字|學生姓名|學生|Name)$/i.test(val)) colName = j;
+          if (/^(座號|學號|號碼|編號|No\.?)$/i.test(val)) colNo = j;
+          if (/^(性別|Gender|Sex)$/i.test(val)) colGender = j;
+        }
+        if (colName !== -1) { headerRowIdx = i; break; }
+      }
+
+      if (colName === -1) {
+        if (rawRows[0].length >= 2 && !isNaN(Number(rawRows[0][0]))) {
+          colNo = 0; colName = 1; colGender = rawRows[0].length >= 3 ? 2 : -1;
+        } else { colName = 0; }
+        headerRowIdx = -1;
+      }
+
+      const parsed = [];
+      for (let i = headerRowIdx + 1; i < rawRows.length; i++) {
+        const row = rawRows[i];
+        if (!row || row.length === 0) continue;
+        let nameStr = colName !== -1 && row[colName] !== undefined ? String(row[colName]).trim() : '';
+        if (!nameStr) continue;
+
+        if (colNo !== -1 && row[colNo] !== undefined) {
+          const noVal = String(row[colNo]).trim();
+          if (noVal && !nameStr.startsWith(noVal)) {
+            nameStr = `${noVal.padStart(2, '0')}. ${nameStr}`;
+          }
+        }
+
+        let gender = 'boy';
+        if (colGender !== -1 && row[colGender] !== undefined) {
+          if (/^(女|F|Girl|Female|2)$/i.test(String(row[colGender]).trim())) gender = 'girl';
+        }
+
+        parsed.push({
+          id: Date.now() + Math.floor(Math.random() * 100000) + i,
+          name: nameStr,
+          gender: gender,
+          level: 0,
+          logs: [],
+          completedQuests: []
+        });
+      }
+      return parsed;
+    }
+
+    function triggerExcelUpload() {
+      const fileInput = document.getElementById('excelFileInput');
+      fileInput.value = '';
+      fileInput.click();
+    }
+
+    async function handleExcelFiles(e) {
+      const files = Array.from(e.target.files);
+      if (!files || files.length === 0) return;
+
+      const detectedClasses = [];
+      for (let file of files) {
+        try {
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+          const baseFileName = file.name.replace(/\.[^/.]+$/, "").trim();
+          const sheetNames = workbook.SheetNames;
+
+          if (sheetNames.length === 1) {
+            const sheet = workbook.Sheets[sheetNames[0]];
+            const students = parseWorksheetToStudents(sheet);
+            if (students.length > 0) detectedClasses.push({ className: baseFileName, students: students });
+          } else {
+            sheetNames.forEach(sName => {
+              const sheet = workbook.Sheets[sName];
+              const students = parseWorksheetToStudents(sheet);
+              if (students.length > 0) {
+                const finalClassName = /^(Sheet\d+|工作表\d+)$/i.test(sName) ? `${baseFileName}-${sName}` : sName.trim();
+                detectedClasses.push({ className: finalClassName, students: students });
+              }
+            });
+          }
+        } catch (err) { console.error(err); }
+      }
+
+      if (detectedClasses.length === 0) return alert("未能辨識到有效學生名單！");
+      if (!confirm(`成功解析出 ${detectedClasses.length} 個班級名單，點選確定立即匯入！`)) return;
+
+      detectedClasses.forEach(item => {
+        if (!systemData.classes[item.className]) {
+          systemData.classes[item.className] = {
+            name: item.className,
+            createdAt: Date.now(),
+            quests: [{ id: 1, title: "完成習作", reward: 2 }, { id: 2, title: "完成筆記", reward: 3 }],
+            students: item.students
+          };
+        } else {
+          systemData.classes[item.className].students = item.students;
+        }
+      });
+
+      systemData.currentClass = detectedClasses[0].className;
+      saveData();
+      renderClassSelector();
+      renderStudents();
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(systemData));
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", `勇者學園班級紀錄_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.readAsText(file, 'UTF-8');
+        reader.onload = evt => {
+          try {
+            systemData = normalizeData(JSON.parse(evt.target.result));
+            saveData();
+            renderClassSelector();
+            renderStudents();
+            alert("備份讀取成功！");
+          } catch (err) { alert("讀取失敗！"); }
+        }
+      }
+      input.click();
+    }
+
+    initCloudSync();
+  </script>
+</body>
+</html>
