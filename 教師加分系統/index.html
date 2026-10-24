@@ -174,7 +174,7 @@
     .btn-view-toggle { background: #7c3aed; color: white; border: none; font-weight: 700; }
     .btn-view-toggle:hover { background: #6d28d9; }
 
-    /* 卡片檢視與明顯加粗描邊 */
+    /* 卡片檢視與依等級 STAGE 區分的階層描邊顏色 */
     .student-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -198,13 +198,23 @@
       transform: translateY(-4px);
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
     }
-    .card.boy { border-color: #38bdf8; background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%); }
-    .card.boy:hover { border-color: #0284c7; }
-    .card.girl { border-color: #f472b6; background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 100%); }
-    .card.girl:hover { border-color: #db2777; }
 
+    /* 依 STAGE (0~10) 區分的外框高低等差異色彩 */
+    .card.tier-0 { border-color: #94a3b8; background: #ffffff; }
+    .card.tier-1 { border-color: #38bdf8; background: #f0f9ff; }
+    .card.tier-2 { border-color: #0284c7; background: #e0f2fe; }
+    .card.tier-3 { border-color: #2dd4bf; background: #f0fdfa; }
+    .card.tier-4 { border-color: #10b981; background: #ecfdf5; }
+    .card.tier-5 { border-color: #facc15; background: #fefce8; }
+    .card.tier-6 { border-color: #fb923c; background: #fff7ed; }
+    .card.tier-7 { border-color: #f87171; background: #fef2f2; }
+    .card.tier-8 { border-color: #c084fc; background: #faf5ff; }
+    .card.tier-9 { border-color: #ec4899; background: #fdf2f8; }
+    
+    /* 滿級 STAGE 10 (Lv 200) 暖金閃耀光環特效 */
     .card.max-tier {
       border-color: #f59e0b !important;
+      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
       animation: warmGoldAura 1.8s infinite alternate;
     }
     @keyframes warmGoldAura {
@@ -212,10 +222,11 @@
       to { box-shadow: 0 0 25px rgba(251, 191, 36, 0.9), inset 0 0 12px rgba(245, 158, 11, 0.7); }
     }
 
+    /* 1000*1080 比例舞台 */
     .avatar-stage {
       width: 100%;
       max-width: 180px;
-      aspect-ratio: 2 / 3;
+      aspect-ratio: 1000 / 1080;
       background: #f8fafc;
       border-radius: 10px;
       position: relative;
@@ -506,7 +517,7 @@
         <button class="btn-sort-rank" onclick="sortStudents()">戰力榜排序</button>
         <button class="btn-sort-num" onclick="sortByNumber()">座號排序</button>
         <button class="btn-excel" onclick="triggerExcelUpload()">匯入 Excel</button>
-        <button class="btn-tool" onclick="openScoreModal(null, true)">全班加分</button>
+        <button class="btn-tool" onclick="openPlusModal(null, true)">全班加分</button>
         <button class="btn-danger" onclick="deleteCurrentClass()">刪除班級</button>
       </div>
       <div style="display:flex; gap:6px; flex-wrap: wrap;">
@@ -577,35 +588,67 @@
     </div>
   </div>
 
-  <!-- ⚡ 整合型加分 / 減分 / +? 點數與原因選擇 Modal -->
-  <div id="scoreModal" class="modal-overlay" style="display: none;" onclick="closeScoreModal(event)">
+  <!-- 🟢 加分專用視窗 Modal -->
+  <div id="plusModal" class="modal-overlay" style="display: none;" onclick="closePlusModal(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <h3 id="scoreModalTitle">調整分數</h3>
-        <button class="modal-close" onclick="closeScoreModal()">✖</button>
+        <h3 id="plusModalTitle">增加分數</h3>
+        <button class="modal-close" onclick="closePlusModal()">✖</button>
       </div>
 
-      <!-- 自訂點數輸入列 -->
       <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px;">
-        <label style="font-size: 0.8rem; color: var(--text-sub); display: block; margin-bottom: 4px; font-weight: 700;">調整點數 (正數加分，負數減分)：</label>
+        <label style="font-size: 0.8rem; color: var(--text-sub); display: block; margin-bottom: 4px; font-weight: 700;">增加點數：</label>
         <div style="display: flex; gap: 6px;">
-          <input type="number" id="customDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;">
+          <input type="number" id="plusDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;">
           <span style="font-size: 0.85rem; color: var(--text-sub); align-self: center;">分</span>
         </div>
       </div>
 
-      <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 4px;">選擇加分/減分原因：</p>
+      <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 4px;">選擇加分原因：</p>
       
       <div class="reason-btn-grid">
-        <button class="btn-reason-choice" onclick="submitScoreWithReason('踴躍發言')">踴躍發言</button>
-        <button class="btn-reason-choice" onclick="submitScoreWithReason('回答正確')">回答正確</button>
+        <button class="btn-reason-choice" onclick="submitPlusWithReason('踴躍發言')">踴躍發言</button>
+        <button class="btn-reason-choice" onclick="submitPlusWithReason('回答正確')">回答正確</button>
       </div>
 
       <div style="margin-top: 6px;">
         <label style="font-size: 0.78rem; color: var(--text-sub); display: block; margin-bottom: 3px;">其他自訂原因：</label>
         <div style="display: flex; gap: 6px;">
-          <input type="text" id="customReasonInput" placeholder="自行輸入原因..." style="flex: 1;" onkeydown="if(event.key==='Enter') submitScoreWithCustomReason()">
-          <button class="btn-create" onclick="submitScoreWithCustomReason()">確認送出</button>
+          <input type="text" id="customPlusReasonInput" placeholder="自行輸入加分原因..." style="flex: 1;" onkeydown="if(event.key==='Enter') submitPlusWithCustomReason()">
+          <button class="btn-create" onclick="submitPlusWithCustomReason()">確認送出</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔴 減分專用視窗 Modal -->
+  <div id="minusModal" class="modal-overlay" style="display: none;" onclick="closeMinusModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="minusModalTitle">扣除分數</h3>
+        <button class="modal-close" onclick="closeMinusModal()">✖</button>
+      </div>
+
+      <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px;">
+        <label style="font-size: 0.8rem; color: var(--text-sub); display: block; margin-bottom: 4px; font-weight: 700;">扣除點數：</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="number" id="minusDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;">
+          <span style="font-size: 0.85rem; color: var(--text-sub); align-self: center;">分</span>
+        </div>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 4px;">選擇扣分原因：</p>
+      
+      <div class="reason-btn-grid">
+        <button class="btn-reason-choice" onclick="submitMinusWithReason('分心聊天')">分心聊天</button>
+        <button class="btn-reason-choice" onclick="submitMinusWithReason('違反規定')">違反規定</button>
+      </div>
+
+      <div style="margin-top: 6px;">
+        <label style="font-size: 0.78rem; color: var(--text-sub); display: block; margin-bottom: 3px;">其他自訂原因：</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="customMinusReasonInput" placeholder="自行輸入扣分原因..." style="flex: 1;" onkeydown="if(event.key==='Enter') submitMinusWithCustomReason()">
+          <button class="btn-danger" onclick="submitMinusWithCustomReason()">確認扣分</button>
         </div>
       </div>
     </div>
@@ -654,18 +697,19 @@
     let currentScoreAction = null; // { studentId, isBatch }
     let viewingStudentId = null;
 
+    // 更新後的 11 階段等級稱號
     const EVOLUTION_TIERS = [
       { lv: 0,   boy: "見習劍士", girl: "魔法學徒" },
       { lv: 20,  boy: "菁英劍士", girl: "見習魔法師" },
       { lv: 40,  boy: "初級騎士", girl: "魔法師" },
-      { lv: 60,  boy: "重裝騎士", girl: "魔導士" },
-      { lv: 80,  boy: "精鋼騎士", girl: "精靈魔導士" },
+      { lv: 60,  boy: "重裝騎士", girl: "精靈魔導士" },
+      { lv: 80,  boy: "精鋼騎士", girl: "大魔導士" },
       { lv: 100, boy: "皇家騎士", girl: "元素支配者" },
       { lv: 120, boy: "聖殿騎士", girl: "聖殿審判官" },
-      { lv: 140, boy: "屠龍騎士", girl: "聖殿祭司" },
-      { lv: 160, boy: "破軍領主", girl: "聖殿賢者" },
-      { lv: 180, boy: "護國將軍", girl: "聖殿聖女" },
-      { lv: 200, boy: "傳奇元帥", girl: "聖光女皇" }
+      { lv: 140, boy: "聖騎士長", girl: "聖殿賢者" },
+      { lv: 160, boy: "護國將軍", girl: "聖殿祭司" },
+      { lv: 180, boy: "破軍領主", girl: "聖殿聖女" },
+      { lv: 200, boy: "傳奇帝皇", girl: "聖光女皇" }
     ];
 
     const HERO_AVATARS = {
@@ -842,7 +886,7 @@
         <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc; color:#64748b; font-size:0.8rem; text-align:center; padding:8px;">
           <span style="font-size:1.5rem; margin-bottom:4px; color:#f59e0b;">⚔️</span>
           <span style="font-weight:700; color:#334155;">${roleTitle}</span>
-          <span style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">[720×1080 圖檔未放置]</span>
+          <span style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">[1000×1080 圖檔未放置]</span>
         </div>
       `;
     }
@@ -1036,49 +1080,52 @@
       }
     }
 
-    // ⚡ 整合型評分視窗觸發
-    function openScoreModal(studentId, isBatch = false, defaultDelta = 1) {
+    // 🟢 加分視窗觸發
+    function openPlusModal(studentId, isBatch = false, defaultDelta = 1) {
       currentScoreAction = { studentId, isBatch };
-      document.getElementById('customDeltaInput').value = defaultDelta;
-      document.getElementById('customReasonInput').value = '';
+      document.getElementById('plusDeltaInput').value = defaultDelta;
+      document.getElementById('customPlusReasonInput').value = '';
 
       if (isBatch) {
-        document.getElementById('scoreModalTitle').textContent = `全班調整分數`;
+        document.getElementById('plusModalTitle').textContent = `全班增加分數`;
       } else {
         const stu = getCurrentStudents().find(s => s.id === studentId);
-        if (stu) document.getElementById('scoreModalTitle').textContent = `【${stu.name}】調整分數`;
+        if (stu) document.getElementById('plusModalTitle').textContent = `【${stu.name}】增加分數`;
       }
-      document.getElementById('scoreModal').style.display = 'flex';
+      document.getElementById('plusModal').style.display = 'flex';
     }
 
-    function closeScoreModal() {
-      document.getElementById('scoreModal').style.display = 'none';
+    function closePlusModal() {
+      document.getElementById('plusModal').style.display = 'none';
       currentScoreAction = null;
     }
 
-    function submitScoreWithReason(reason) {
-      const delta = parseInt(document.getElementById('customDeltaInput').value, 10);
-      if (isNaN(delta) || delta === 0) return alert("請輸入有效的非零點數！");
-      applyScoreAction(delta, reason);
+    function submitPlusWithReason(reason) {
+      const delta = parseInt(document.getElementById('plusDeltaInput').value, 10);
+      if (isNaN(delta) || delta <= 0) return alert("請輸入有效的正數點數！");
+      applyPlusAction(delta, reason);
     }
 
-    function submitScoreWithCustomReason() {
-      const delta = parseInt(document.getElementById('customDeltaInput').value, 10);
-      if (isNaN(delta) || delta === 0) return alert("請輸入有效的非零點數！");
-      const input = document.getElementById('customReasonInput');
-      const reason = input.value.trim() || (delta > 0 ? "課堂表現" : "扣分");
-      applyScoreAction(delta, reason);
+    function submitPlusWithCustomReason() {
+      const delta = parseInt(document.getElementById('plusDeltaInput').value, 10);
+      if (isNaN(delta) || delta <= 0) return alert("請輸入有效的正數點數！");
+      const input = document.getElementById('customPlusReasonInput');
+      const reason = input.value.trim() || "課堂表現";
+      applyPlusAction(delta, reason);
     }
 
-    function applyScoreAction(delta, reason) {
+    function applyPlusAction(delta, reason) {
       if (!currentScoreAction) return;
       const { studentId, isBatch } = currentScoreAction;
 
       if (isBatch) {
         getCurrentStudents().forEach(stu => {
+          const oldTier = Math.floor(stu.level / 20);
           stu.level = Math.max(0, Math.min(200, stu.level + delta));
+          const newTier = Math.floor(stu.level / 20);
           if (!Array.isArray(stu.logs)) stu.logs = [];
           stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+          if (newTier > oldTier) playLevelUpSound();
         });
       } else {
         const stu = getCurrentStudents().find(s => s.id === studentId);
@@ -1088,10 +1135,55 @@
           const newTier = Math.floor(stu.level / 20);
           if (!Array.isArray(stu.logs)) stu.logs = [];
           stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
-          if (newTier > oldTier && delta > 0) playLevelUpSound();
+          if (newTier > oldTier) playLevelUpSound();
         }
       }
-      closeScoreModal();
+      closePlusModal();
+      saveData();
+      renderStudents();
+    }
+
+    // 🔴 減分視窗觸發
+    function openMinusModal(studentId, defaultDelta = 1) {
+      currentScoreAction = { studentId, isBatch: false };
+      document.getElementById('minusDeltaInput').value = defaultDelta;
+      document.getElementById('customMinusReasonInput').value = '';
+
+      const stu = getCurrentStudents().find(s => s.id === studentId);
+      if (stu) document.getElementById('minusModalTitle').textContent = `【${stu.name}】扣除分數`;
+      document.getElementById('minusModal').style.display = 'flex';
+    }
+
+    function closeMinusModal() {
+      document.getElementById('minusModal').style.display = 'none';
+      currentScoreAction = null;
+    }
+
+    function submitMinusWithReason(reason) {
+      const deltaVal = parseInt(document.getElementById('minusDeltaInput').value, 10);
+      if (isNaN(deltaVal) || deltaVal <= 0) return alert("請輸入有效的正數點數！");
+      applyMinusAction(-deltaVal, reason);
+    }
+
+    function submitMinusWithCustomReason() {
+      const deltaVal = parseInt(document.getElementById('minusDeltaInput').value, 10);
+      if (isNaN(deltaVal) || deltaVal <= 0) return alert("請輸入有效的正數點數！");
+      const input = document.getElementById('customMinusReasonInput');
+      const reason = input.value.trim() || "扣分";
+      applyMinusAction(-deltaVal, reason);
+    }
+
+    function applyMinusAction(delta, reason) {
+      if (!currentScoreAction) return;
+      const { studentId } = currentScoreAction;
+
+      const stu = getCurrentStudents().find(s => s.id === studentId);
+      if (stu) {
+        stu.level = Math.max(0, Math.min(200, stu.level + delta));
+        if (!Array.isArray(stu.logs)) stu.logs = [];
+        stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+      }
+      closeMinusModal();
       saveData();
       renderStudents();
     }
@@ -1119,7 +1211,7 @@
           const progressPercent = Math.min(100, (stu.level / 200) * 100);
 
           const card = document.createElement('div');
-          card.className = `card ${stu.gender} ${isMax ? 'max-tier' : ''}`;
+          card.className = `card ${stu.gender} tier-${tier} ${isMax ? 'max-tier' : ''}`;
           card.onclick = () => viewStudentLogs(stu.id);
 
           card.innerHTML = `
@@ -1141,9 +1233,9 @@
             </div>
 
             <div class="controls">
-              <button class="btn-score btn-minus" title="扣分" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, -1)">-1</button>
-              <button class="btn-score btn-plus-1" title="加分" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 1)">+1</button>
-              <button class="btn-score btn-plus-custom" title="自訂點數" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 5)">+?</button>
+              <button class="btn-score btn-minus" title="扣分" onclick="event.stopPropagation(); openMinusModal(${stu.id}, 1)">-1</button>
+              <button class="btn-score btn-plus-1" title="加分" onclick="event.stopPropagation(); openPlusModal(${stu.id}, false, 1)">+1</button>
+              <button class="btn-score btn-plus-custom" title="自訂加分" onclick="event.stopPropagation(); openPlusModal(${stu.id}, false, 5)">+?</button>
             </div>
           `;
           grid.appendChild(card);
@@ -1172,12 +1264,12 @@
             <td><strong style="cursor: pointer; color: #0f172a;" onclick="event.stopPropagation(); editStudentName(${stu.id})">${stu.name}</strong></td>
             <td>${genderText}</td>
             <td><strong style="color: #d97706;">Lv. ${stu.level}</strong></td>
-            <td style="color: var(--text-sub);">${title}</td>
+            <td style="color: var(--text-sub);">${title} (${tier})</td>
             <td>
               <div style="display: flex; gap: 4px;">
-                <button class="btn-score btn-minus" style="padding: 2px 8px;" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, -1)">-1</button>
-                <button class="btn-score btn-plus-1" style="padding: 2px 8px;" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 1)">+1</button>
-                <button class="btn-score btn-plus-custom" style="padding: 2px 8px;" onclick="event.stopPropagation(); openScoreModal(${stu.id}, false, 5)">+?</button>
+                <button class="btn-score btn-minus" style="padding: 2px 8px;" onclick="event.stopPropagation(); openMinusModal(${stu.id}, 1)">-1</button>
+                <button class="btn-score btn-plus-1" style="padding: 2px 8px;" onclick="event.stopPropagation(); openPlusModal(${stu.id}, false, 1)">+1</button>
+                <button class="btn-score btn-plus-custom" style="padding: 2px 8px;" onclick="event.stopPropagation(); openPlusModal(${stu.id}, false, 5)">+?</button>
               </div>
             </td>
             <td>
@@ -1244,7 +1336,9 @@
 
       if (isChecked) {
         if (!stu.completedQuests.includes(questId)) stu.completedQuests.push(questId);
+        const oldTier = Math.floor(stu.level / 20);
         stu.level = Math.max(0, Math.min(200, stu.level + quest.reward));
+        const newTier = Math.floor(stu.level / 20);
         if (!Array.isArray(stu.logs)) stu.logs = [];
         stu.logs.unshift({
           id: Date.now() + Math.random(),
@@ -1252,6 +1346,7 @@
           delta: quest.reward,
           reason: `完成任務：${quest.title}`
         });
+        if (newTier > oldTier) playLevelUpSound();
       } else {
         stu.completedQuests = stu.completedQuests.filter(id => id !== questId);
         stu.level = Math.max(0, Math.min(200, stu.level - quest.reward));
@@ -1307,9 +1402,13 @@
       if (isNaN(delta) || delta === 0) return alert("請輸入有效的非零點數！");
       const reason = document.getElementById('manualLogReason').value.trim() || "手動登錄";
 
+      const oldTier = Math.floor(stu.level / 20);
       stu.level = Math.max(0, Math.min(200, stu.level + delta));
+      const newTier = Math.floor(stu.level / 20);
+
       if (!Array.isArray(stu.logs)) stu.logs = [];
       stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+      if (newTier > oldTier && delta > 0) playLevelUpSound();
 
       document.getElementById('manualLogDelta').value = '';
       document.getElementById('manualLogReason').value = '';
