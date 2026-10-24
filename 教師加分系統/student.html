@@ -114,28 +114,27 @@
       display: grid;
       grid-template-columns: 320px 1fr;
       gap: 24px;
-      align-items: start; /* 修正為 start 避免平板垂直拉伸溢出 */
+      align-items: start;
     }
 
     @media (max-width: 768px) {
       .dash-grid { grid-template-columns: 1fr; }
     }
 
-    /* 左側角色面板 (修復溢出跑版) */
     .hero-panel {
       background: #f8fafc;
       border-radius: 14px;
-      padding: 20px 16px;
+      padding: 16px;
       border: 2px solid #cbd5e1;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 10px; /* 改用固定的 gap 確保內容自然排列不超出邊界 */
+      gap: 10px;
     }
     .hero-avatar-box {
-      width: 180px;
-      aspect-ratio: 2 / 3;
+      width: 210px;
+      aspect-ratio: 1000 / 1080; /* 配合 1000*1080 圖片比例 */
       background: #ffffff;
       border-radius: 12px;
       border: 1px solid var(--border-color);
@@ -143,15 +142,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
     .hero-avatar-box img {
       width: 100%;
       height: 100%;
       object-fit: contain;
     }
-    .hero-name { font-size: 1.25rem; font-weight: 900; color: #0f172a; margin-top: 2px; }
-    .hero-title { font-size: 1.05rem; color: #b45309; font-weight: 800; }
+    .hero-name { font-size: 1.25rem; font-weight: 900; color: #0f172a; }
+    .hero-title { font-size: 1.1rem; color: #b45309; font-weight: 800; }
     .hero-level { font-size: 1.45rem; font-weight: 900; color: #d97706; margin: 2px 0; }
 
     .exp-container { width: 100%; margin-top: 4px; }
@@ -167,9 +166,8 @@
       background: linear-gradient(90deg, #38bdf8, #ec4899, #f59e0b);
       transition: width 0.3s ease;
     }
-    .exp-text { font-size: 0.78rem; color: var(--text-sub); text-align: right; margin-top: 4px; font-weight: 700; }
+    .exp-text { font-size: 0.78rem; color: var(--text-sub); text-align: right; margin-top: 3px; font-weight: 700; }
 
-    /* 右側資訊區塊 */
     .info-panel {
       display: flex;
       flex-direction: column;
@@ -286,17 +284,17 @@
   <div id="dashboardView" class="dashboard-container">
     <div class="dash-header">
       <h2 id="dashClassName">三年甲班</h2>
-      <button class="btn-logout" onclick="studentLogout()">登出 / 更換帳號</button>
+      <button class="btn-logout" onclick="studentLogout()">登出</button>
     </div>
 
     <div class="dash-grid">
-      <!-- 左側角色面板 (修復版) -->
+      <!-- 左側角色面板 -->
       <div class="hero-panel" id="heroCardBorder">
         <div class="hero-name" id="dashStudentName">01. 林小明</div>
         <div class="hero-title" id="dashStudentTitle">見習劍士</div>
         
         <div class="hero-avatar-box">
-          <img id="heroAvatarImg" src="" alt="角色頭像" onerror="this.src='https://via.placeholder.com/180x270?text=Hero'">
+          <img id="heroAvatarImg" src="" alt="角色頭像" onerror="this.src='https://via.placeholder.com/1000x1080?text=Hero'">
         </div>
 
         <div class="hero-level" id="dashStudentLevel">⚔️ Lv. 10</div>
@@ -349,14 +347,14 @@
       { lv: 0,   boy: "見習劍士", girl: "魔法學徒" },
       { lv: 20,  boy: "菁英劍士", girl: "見習魔法師" },
       { lv: 40,  boy: "初級騎士", girl: "魔法師" },
-      { lv: 60,  boy: "重裝騎士", girl: "魔導士" },
-      { lv: 80,  boy: "精鋼騎士", girl: "精靈魔導士" },
+      { lv: 60,  boy: "重裝騎士", girl: "精靈魔導士" },
+      { lv: 80,  boy: "精鋼騎士", girl: "大魔導士" },
       { lv: 100, boy: "皇家騎士", girl: "元素支配者" },
       { lv: 120, boy: "聖殿騎士", girl: "聖殿審判官" },
-      { lv: 140, boy: "屠龍騎士", girl: "聖殿祭司" },
-      { lv: 160, boy: "破軍領主", girl: "聖殿賢者" },
-      { lv: 180, boy: "護國將軍", girl: "聖殿聖女" },
-      { lv: 200, boy: "傳奇元帥", girl: "聖光女皇" }
+      { lv: 140, boy: "聖騎士長", girl: "聖殿賢者" },
+      { lv: 160, boy: "護國將軍", girl: "聖殿祭司" },
+      { lv: 180, boy: "破軍領主", girl: "聖殿聖女" },
+      { lv: 200, boy: "傳奇帝皇", girl: "聖光女皇" }
     ];
 
     const HERO_AVATARS = {
