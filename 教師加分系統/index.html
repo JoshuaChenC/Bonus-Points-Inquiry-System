@@ -171,6 +171,8 @@
     .btn-quest:hover { background: #b45309; }
     .btn-tracking { background: #0284c7; color: white; border: none; font-weight: 700; }
     .btn-tracking:hover { background: #0369a1; }
+    .btn-shop { background: #059669; color: white; border: none; font-weight: 700; }
+    .btn-shop:hover { background: #047857; }
     .btn-view-toggle { background: #7c3aed; color: white; border: none; font-weight: 700; }
     .btn-view-toggle:hover { background: #6d28d9; }
 
@@ -199,7 +201,6 @@
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
     }
 
-    /* 依 STAGE (0~10) 區分的外框高低等差異色彩 */
     .card.tier-0 { border-color: #94a3b8; background: #ffffff; }
     .card.tier-1 { border-color: #38bdf8; background: #f0f9ff; }
     .card.tier-2 { border-color: #0284c7; background: #e0f2fe; }
@@ -211,7 +212,6 @@
     .card.tier-8 { border-color: #c084fc; background: #faf5ff; }
     .card.tier-9 { border-color: #ec4899; background: #fdf2f8; }
     
-    /* 滿級 STAGE 10 (Lv 200) 暖金閃耀光環特效 */
     .card.max-tier {
       border-color: #f59e0b !important;
       background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
@@ -222,7 +222,6 @@
       to { box-shadow: 0 0 25px rgba(251, 191, 36, 0.9), inset 0 0 12px rgba(245, 158, 11, 0.7); }
     }
 
-    /* 1000*1080 比例舞台 */
     .avatar-stage {
       width: 100%;
       max-width: 180px;
@@ -365,8 +364,8 @@
       border: 1px solid var(--border-color);
       border-radius: 14px;
       width: 90%;
-      max-width: 480px;
-      max-height: 85vh;
+      max-width: 620px;
+      max-height: 88vh;
       display: flex;
       flex-direction: column;
       padding: 20px;
@@ -401,7 +400,7 @@
       justify-content: space-between;
       align-items: center;
       background: #ffffff;
-      padding: 6px 10px;
+      padding: 8px 10px;
       border-radius: 6px;
       border: 1px solid var(--border-color);
       margin-bottom: 6px;
@@ -444,7 +443,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 200px;
+      max-height: 160px;
       margin: 6px 0;
     }
     .log-item {
@@ -505,9 +504,10 @@
         <span class="class-select-label">當前班級：</span>
         <select id="classSelect" class="class-select-dropdown" onchange="switchClass(this.value)"></select>
       </div>
-      <div style="display: flex; gap: 6px;">
+      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <button class="btn-shop" onclick="openShopManagerModal()">🎁 獎勵商城管理</button>
         <button class="btn-tracking" onclick="openTrackingModal()">📋 未完成名單</button>
-        <button class="btn-quest" onclick="openQuestManagerModal()">🎯 任務列表設定</button>
+        <button class="btn-quest" onclick="openQuestManagerModal()">🎯 任務設定</button>
       </div>
     </div>
 
@@ -547,6 +547,36 @@
       </table>
     </div>
   </main>
+
+  <!-- 🎁 獎勵商城與各班配額管理 Modal -->
+  <div id="shopManagerModal" class="modal-overlay" style="display: none;" onclick="closeShopManagerModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🎁 獎勵商城與配額管理</h3>
+        <button class="modal-close" onclick="closeShopManagerModal()">✖</button>
+      </div>
+      
+      <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 8px;">新增獎品、上傳圖片、設定兌換所需等級與總庫存：</p>
+      
+      <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <input type="text" id="newPrizeTitle" placeholder="獎品名稱 (如: 免寫作業卡)" style="flex: 2; min-width: 140px;">
+          <input type="number" id="newPrizeLevel" placeholder="解鎖等級" value="20" style="width: 85px;" title="解鎖等級">
+          <input type="number" id="newPrizeStock" placeholder="總庫存" value="10" style="width: 75px;" title="總庫存">
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-sub);">商品圖檔：</label>
+            <input type="file" id="newPrizeImgFile" accept="image/*" style="font-size: 0.75rem; padding: 3px;">
+          </div>
+          <button class="btn-create" onclick="addGlobalPrize()">新增獎品</button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.85rem; font-weight: 700; color: #b45309; margin-bottom: 4px;">現有商城獎品清單與各班配額設定 (自動依解鎖等級排序)：</div>
+      <div id="globalPrizeList" class="quest-section" style="max-height: 280px; overflow-y: auto;"></div>
+    </div>
+  </div>
 
   <!-- 🎯 任務列表設定 Modal -->
   <div id="questManagerModal" class="modal-overlay" style="display: none;" onclick="closeQuestManagerModal(event)">
@@ -608,7 +638,10 @@
       
       <div class="reason-btn-grid">
         <button class="btn-reason-choice" onclick="submitPlusWithReason('踴躍發言')">踴躍發言</button>
+        <button class="btn-reason-choice" onclick="submitPlusWithReason('習作全對')">習作全對</button>
         <button class="btn-reason-choice" onclick="submitPlusWithReason('回答正確')">回答正確</button>
+        <button class="btn-reason-choice" onclick="submitPlusWithReason('完成筆記')">完成筆記</button>
+        <button class="btn-reason-choice" onclick="submitPlusWithReason('表現良好')">表現良好</button>
       </div>
 
       <div style="margin-top: 6px;">
@@ -641,6 +674,8 @@
       
       <div class="reason-btn-grid">
         <button class="btn-reason-choice" onclick="submitMinusWithReason('分心聊天')">分心聊天</button>
+        <button class="btn-reason-choice" onclick="submitMinusWithReason('未帶用具')">未帶用具</button>
+        <button class="btn-reason-choice" onclick="submitMinusWithReason('作業未交')">作業未交</button>
         <button class="btn-reason-choice" onclick="submitMinusWithReason('違反規定')">違反規定</button>
       </div>
 
@@ -662,16 +697,28 @@
         <button class="modal-close" onclick="closeLogModal()">✖</button>
       </div>
 
+      <!-- 學生商城兌換專區 (自動依解鎖等級排序) -->
       <div class="quest-section">
-        <div style="font-size: 0.82rem; color: #b45309; margin-bottom: 6px; font-weight: 800;">🎯 班級任務完成狀態 (勾選自動加分)：</div>
-        <div id="studentQuestChecklist" style="display: flex; flex-direction: column; gap: 4px; max-height: 130px; overflow-y: auto;"></div>
+        <div style="font-size: 0.82rem; color: #b45309; margin-bottom: 6px; font-weight: 800;">🎁 獎勵兌換商城 (依解鎖等級排序)：</div>
+        <div id="studentShopContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; max-height: 140px; overflow-y: auto;"></div>
       </div>
 
-      <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 8px;">
-        <div style="font-size: 0.8rem; color: #b45309; margin-bottom: 4px; font-weight: 800;">手動補登歷程：</div>
+      <!-- 學生已兌換獎品紀錄 -->
+      <div class="quest-section">
+        <div style="font-size: 0.82rem; color: #047857; margin-bottom: 4px; font-weight: 800;">🎒 已兌換獎品紀錄：</div>
+        <div id="studentRedeemHistory" style="font-size: 0.8rem; color: #334155; max-height: 80px; overflow-y: auto;"></div>
+      </div>
+
+      <div class="quest-section">
+        <div style="font-size: 0.82rem; color: #b45309; margin-bottom: 6px; font-weight: 800;">🎯 班級任務完成狀態 (勾選自動加分)：</div>
+        <div id="studentQuestChecklist" style="display: flex; flex-direction: column; gap: 4px; max-height: 110px; overflow-y: auto;"></div>
+      </div>
+
+      <div style="background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 6px;">
+        <div style="font-size: 0.78rem; color: #b45309; margin-bottom: 3px; font-weight: 800;">手動補登歷程：</div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <input type="number" id="manualLogDelta" placeholder="點數 (如 5)" style="width: 100px;">
-          <input type="text" id="manualLogReason" placeholder="輸入原因" style="flex: 1; min-width: 120px;">
+          <input type="number" id="manualLogDelta" placeholder="點數" style="width: 90px;">
+          <input type="text" id="manualLogReason" placeholder="輸入原因" style="flex: 1; min-width: 100px;">
           <button class="btn-create" onclick="addManualLog()">新增</button>
         </div>
       </div>
@@ -694,10 +741,9 @@
     };
 
     let currentViewMode = 'grid';
-    let currentScoreAction = null; // { studentId, isBatch }
+    let currentScoreAction = null;
     let viewingStudentId = null;
 
-    // 更新後的 11 階段等級稱號
     const EVOLUTION_TIERS = [
       { lv: 0,   boy: "見習劍士", girl: "魔法學徒" },
       { lv: 20,  boy: "菁英劍士", girl: "見習魔法師" },
@@ -727,10 +773,11 @@
 
     function normalizeData(raw) {
       if (!raw || typeof raw !== 'object' || !raw.classes) {
-        return { currentClass: "", updatedAt: 0, classes: {} };
+        return { currentClass: "", updatedAt: 0, classes: {}, shopPrizes: [] };
       }
       let currentClass = raw.currentClass || "";
       let classes = {};
+      let shopPrizes = Array.isArray(raw.shopPrizes) ? raw.shopPrizes : [];
 
       Object.keys(raw.classes).forEach(cName => {
         let cVal = raw.classes[cName];
@@ -755,7 +802,8 @@
       return {
         currentClass: currentClass,
         updatedAt: raw.updatedAt || 0,
-        classes: classes
+        classes: classes,
+        shopPrizes: shopPrizes
       };
     }
 
@@ -763,6 +811,9 @@
       return {
         currentClass: "三年甲班",
         updatedAt: Date.now(),
+        shopPrizes: [
+          { id: 1, title: "免寫作業卡", unlockLevel: 20, totalStock: 10, image: "", classAllocations: { "三年甲班": 10 } }
+        ],
         classes: {
           "三年甲班": {
             name: "三年甲班",
@@ -772,8 +823,8 @@
               { id: 2, title: "完成筆記", reward: 3 }
             ],
             students: [
-              { id: 1, name: "01. 林小明", gender: "boy", level: 10, logs: [], completedQuests: [] },
-              { id: 2, name: "02. 陳美美", gender: "girl", level: 45, logs: [], completedQuests: [] }
+              { id: 1, name: "01. 林小明", gender: "boy", level: 25, logs: [], completedQuests: [], redeemedPrizes: [] },
+              { id: 2, name: "02. 陳美美", gender: "girl", level: 45, logs: [], completedQuests: [], redeemedPrizes: [] }
             ]
           }
         }
@@ -781,7 +832,7 @@
     }
 
     const localCache = localStorage.getItem('hero_quest_layered_v7');
-    let systemData = localCache ? normalizeData(JSON.parse(localCache)) : { currentClass: "", updatedAt: 0, classes: {} };
+    let systemData = localCache ? normalizeData(JSON.parse(localCache)) : { currentClass: "", updatedAt: 0, classes: {}, shopPrizes: [] };
 
     let fbDB = null;
     let isCloudActive = false;
@@ -938,6 +989,17 @@
         ],
         students: []
       };
+
+      if (!Array.isArray(systemData.shopPrizes)) systemData.shopPrizes = [];
+      const classNames = Object.keys(systemData.classes);
+      systemData.shopPrizes.forEach(prize => {
+        if (!prize.classAllocations) prize.classAllocations = {};
+        const avg = Math.floor(prize.totalStock / classNames.length);
+        classNames.forEach(c => {
+          if (prize.classAllocations[c] === undefined) prize.classAllocations[c] = avg;
+        });
+      });
+
       systemData.currentClass = name;
       input.value = '';
       renderClassSelector();
@@ -955,6 +1017,167 @@
         renderClassSelector();
         renderStudents();
       }
+    }
+
+    // 🎁 獎勵商城管理邏輯 (後台列表自動依解鎖等級排序)
+    function openShopManagerModal() {
+      renderGlobalPrizeList();
+      document.getElementById('shopManagerModal').style.display = 'flex';
+    }
+
+    function closeShopManagerModal() {
+      document.getElementById('shopManagerModal').style.display = 'none';
+    }
+
+    function addGlobalPrize() {
+      const titleInput = document.getElementById('newPrizeTitle');
+      const levelInput = document.getElementById('newPrizeLevel');
+      const stockInput = document.getElementById('newPrizeStock');
+      const imgFileInput = document.getElementById('newPrizeImgFile');
+
+      const title = titleInput.value.trim();
+      const unlockLevel = parseInt(levelInput.value, 10) || 0;
+      const totalStock = parseInt(stockInput.value, 10) || 10;
+
+      if (!title) return alert("請輸入獎品名稱！");
+
+      if (imgFileInput.files && imgFileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          saveNewPrizeData(title, unlockLevel, totalStock, e.target.result);
+        };
+        reader.readAsDataURL(imgFileInput.files[0]);
+      } else {
+        saveNewPrizeData(title, unlockLevel, totalStock, "");
+      }
+    }
+
+    function saveNewPrizeData(title, unlockLevel, totalStock, imageDataUrl) {
+      if (!Array.isArray(systemData.shopPrizes)) systemData.shopPrizes = [];
+
+      const classNames = Object.keys(systemData.classes);
+      const numClasses = classNames.length || 1;
+      const avgShare = Math.floor(totalStock / numClasses);
+      let classAllocations = {};
+      classNames.forEach(cName => { classAllocations[cName] = avgShare; });
+
+      systemData.shopPrizes.push({
+        id: Date.now(),
+        title: title,
+        unlockLevel: unlockLevel,
+        totalStock: totalStock,
+        image: imageDataUrl,
+        classAllocations: classAllocations
+      });
+
+      document.getElementById('newPrizeTitle').value = '';
+      document.getElementById('newPrizeImgFile').value = '';
+      saveData();
+      renderGlobalPrizeList();
+    }
+
+    function deleteGlobalPrize(prizeId) {
+      if (confirm("確定要刪除此商城獎品嗎？")) {
+        systemData.shopPrizes = systemData.shopPrizes.filter(p => p.id !== prizeId);
+        saveData();
+        renderGlobalPrizeList();
+      }
+    }
+
+    function updatePrizeField(prizeId, field, value) {
+      const prize = systemData.shopPrizes.find(p => p.id === prizeId);
+      if (!prize) return;
+
+      if (field === 'title') prize.title = value.trim() || "未命名獎品";
+      else if (field === 'unlockLevel') prize.unlockLevel = parseInt(value, 10) || 0;
+      else if (field === 'totalStock') {
+        prize.totalStock = parseInt(value, 10) || 0;
+        const classNames = Object.keys(systemData.classes);
+        const numClasses = classNames.length || 1;
+        const avg = Math.floor(prize.totalStock / numClasses);
+        classNames.forEach(c => { prize.classAllocations[c] = avg; });
+      }
+      saveData();
+      renderGlobalPrizeList();
+    }
+
+    function updateClassAllocation(prizeId, className, value) {
+      const prize = systemData.shopPrizes.find(p => p.id === prizeId);
+      if (!prize) return;
+      if (!prize.classAllocations) prize.classAllocations = {};
+      prize.classAllocations[className] = parseInt(value, 10) || 0;
+      renderGlobalPrizeList();
+      saveData();
+    }
+
+    function renderGlobalPrizeList() {
+      const listEl = document.getElementById('globalPrizeList');
+      listEl.innerHTML = '';
+      let prizes = Array.isArray(systemData.shopPrizes) ? [...systemData.shopPrizes] : [];
+      
+      // 自動依解鎖等級由低到高排列
+      prizes.sort((a, b) => a.unlockLevel - b.unlockLevel);
+
+      const classNames = Object.keys(systemData.classes);
+
+      if (prizes.length === 0) {
+        listEl.innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 12px;">商城目前尚無獎品。</div>`;
+        return;
+      }
+
+      prizes.forEach(p => {
+        if (!p.classAllocations) p.classAllocations = {};
+        
+        let allocatedSum = 0;
+        classNames.forEach(cName => {
+          allocatedSum += (p.classAllocations[cName] !== undefined ? p.classAllocations[cName] : 0);
+        });
+        const remainder = p.totalStock - allocatedSum;
+
+        let allocHtml = '';
+        classNames.forEach(cName => {
+          let count = p.classAllocations[cName] !== undefined ? p.classAllocations[cName] : 0;
+          allocHtml += `
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; margin-top: 3px; background: #ffffff; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border-color);">
+              <span>${cName}：</span>
+              <input type="number" class="editable-input" style="width: 55px; text-align: center;" value="${count}" onchange="updateClassAllocation(${p.id}, '${cName}', this.value)">
+            </div>
+          `;
+        });
+
+        const imgTag = p.image ? `<img src="${p.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-color);" />` : `<div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #94a3b8;">無圖</div>`;
+
+        let remainderHtml = '';
+        if (remainder > 0) {
+          remainderHtml = `<div style="font-size: 0.75rem; color: #dc2626; font-weight: 700; margin-top: 4px;">⚠️ 尚有未分配庫存：${remainder} 個</div>`;
+        } else if (remainder < 0) {
+          remainderHtml = `<div style="font-size: 0.75rem; color: #dc2626; font-weight: 700; margin-top: 4px;">⚠️ 各班分配總和 (${allocatedSum}) 超過總庫存 (${p.totalStock})！</div>`;
+        } else {
+          remainderHtml = `<div style="font-size: 0.75rem; color: #16a34a; font-weight: 700; margin-top: 4px;">✅ 各班配額總和已剛好吻合總庫存</div>`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'quest-item-row';
+        div.style.flexDirection = 'column';
+        div.style.alignItems = 'stretch';
+        div.innerHTML = `
+          <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap;">
+            ${imgTag}
+            <input type="text" class="editable-input" style="flex: 2; min-width: 120px;" value="${p.title}" placeholder="獎品名稱" onchange="updatePrizeField(${p.id}, 'title', this.value)">
+            <input type="number" class="editable-input" style="width: 90px;" value="${p.unlockLevel}" placeholder="解鎖等級" title="兌換所需等級" onchange="updatePrizeField(${p.id}, 'unlockLevel', this.value)">
+            <input type="number" class="editable-input" style="width: 75px;" value="${p.totalStock}" placeholder="總庫存" title="總庫存" onchange="updatePrizeField(${p.id}, 'totalStock', this.value)">
+            <button class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteGlobalPrize(${p.id})">刪除</button>
+          </div>
+          <div style="background: #f8fafc; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #b45309; margin-bottom: 2px;">各班配額手動調整：</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px;">
+              ${allocHtml}
+            </div>
+            ${remainderHtml}
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
     }
 
     // 🎯 任務管理
@@ -1283,19 +1506,129 @@
       }
     }
 
-    // 📜 學生冒險歷程與任務勾選
+    // 📜 學生冒險歷程與任務勾選及商城兌換 (學生端商城自動依解鎖等級排序)
     function viewStudentLogs(studentId) {
       const stu = getCurrentStudents().find(s => s.id === studentId);
       if (!stu) return;
 
       viewingStudentId = studentId;
-      document.getElementById('modalStudentTitle').textContent = `【${stu.name}】冒險歷程`;
+      document.getElementById('modalStudentTitle').textContent = `【${stu.name}】冒險歷程 (目前等級: Lv.${stu.level})`;
       document.getElementById('manualLogDelta').value = '';
       document.getElementById('manualLogReason').value = '';
 
+      renderStudentShop(stu);
+      renderStudentRedeemHistory(stu);
       renderStudentQuestChecklist(stu);
       renderModalLogList(stu);
       document.getElementById('logModal').style.display = 'flex';
+    }
+
+    function renderStudentShop(stu) {
+      const container = document.getElementById('studentShopContainer');
+      container.innerHTML = '';
+      let prizes = Array.isArray(systemData.shopPrizes) ? [...systemData.shopPrizes] : [];
+      
+      // 自動依解鎖等級由低到高排列
+      prizes.sort((a, b) => a.unlockLevel - b.unlockLevel);
+
+      const currentClassName = systemData.currentClass;
+
+      if (prizes.length === 0) {
+        container.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-sub);">商城目前尚無上架商品。</span>`;
+        return;
+      }
+
+      if (!Array.isArray(stu.redeemedPrizes)) stu.redeemedPrizes = [];
+      const redeemedIds = stu.redeemedPrizes.map(item => item.prizeId);
+
+      prizes.forEach(p => {
+        if (!p.classAllocations) p.classAllocations = {};
+        const classStock = p.classAllocations[currentClassName] !== undefined ? p.classAllocations[currentClassName] : 0;
+        const isUnlocked = stu.level >= p.unlockLevel;
+        const hasStock = classStock > 0;
+        const alreadyRedeemed = redeemedIds.includes(p.id);
+        const canRedeem = isUnlocked && hasStock && !alreadyRedeemed;
+
+        const imgThumb = p.image ? `<img src="${p.image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;" />` : `<span style="font-size:1.2rem;">🎁</span>`;
+
+        let btnText = '兌換';
+        if (alreadyRedeemed) btnText = '已兌換';
+        else if (!isUnlocked) btnText = '等級未達';
+        else if (!hasStock) btnText = '已兌完';
+
+        const div = document.createElement('div');
+        div.style.cssText = `background:#ffffff; border:1px solid ${canRedeem ? '#f59e0b' : 'var(--border-color)'}; border-radius:6px; padding:6px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; opacity: ${canRedeem ? '1' : '0.6'};`;
+        
+        div.innerHTML = `
+          ${imgThumb}
+          <div style="font-size:0.78rem; font-weight:700; color:#1e293b; line-height:1.2;">${p.title}</div>
+          <div style="font-size:0.7rem; color:#b45309;">需達 Lv.${p.unlockLevel}</div>
+          <div style="font-size:0.68rem; color:var(--text-sub);">庫存: ${classStock}</div>
+          <button class="btn-create" style="padding: 2px 8px; font-size: 0.72rem; width:100%; justify-content:center; margin-top:2px;" ${!canRedeem ? 'disabled style="background:#cbd5e1; cursor:not-allowed;"' : ''} onclick="redeemPrize(${stu.id}, ${p.id})">
+            ${btnText}
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function redeemPrize(studentId, prizeId) {
+      const stu = getCurrentStudents().find(s => s.id === studentId);
+      if (!stu) return;
+      const prize = (systemData.shopPrizes || []).find(p => p.id === prizeId);
+      if (!prize) return;
+
+      const currentClassName = systemData.currentClass;
+      if (!prize.classAllocations) prize.classAllocations = {};
+      const classStock = prize.classAllocations[currentClassName] || 0;
+
+      if (!Array.isArray(stu.redeemedPrizes)) stu.redeemedPrizes = [];
+      if (stu.redeemedPrizes.some(item => item.prizeId === prizeId)) return alert("此商品您已經兌換過了，不能重複兌換！");
+      if (stu.level < prize.unlockLevel) return alert("等級未達，尚未解鎖此獎品！");
+      if (classStock <= 0) return alert("該班此獎品庫存已發完！");
+
+      if (confirm(`確定要幫【${stu.name}】兌換【${prize.title}】嗎？`)) {
+        prize.classAllocations[currentClassName] = classStock - 1;
+
+        stu.redeemedPrizes.unshift({
+          id: Date.now(),
+          prizeId: prize.id,
+          time: Date.now(),
+          title: prize.title,
+          unlockLevel: prize.unlockLevel
+        });
+
+        if (!Array.isArray(stu.logs)) stu.logs = [];
+        stu.logs.unshift({
+          id: Date.now() + Math.random(),
+          time: Date.now(),
+          delta: 0,
+          reason: `兌換獎品：${prize.title}`
+        });
+
+        saveData();
+        renderStudents();
+        viewStudentLogs(stu.id);
+      }
+    }
+
+    function renderStudentRedeemHistory(stu) {
+      const container = document.getElementById('studentRedeemHistory');
+      container.innerHTML = '';
+      const redeemed = Array.isArray(stu.redeemedPrizes) ? stu.redeemedPrizes : [];
+
+      if (redeemed.length === 0) {
+        container.innerHTML = `<span style="font-size: 0.78rem; color: var(--text-sub);">尚無兌換紀錄。</span>`;
+        return;
+      }
+
+      redeemed.forEach(item => {
+        const dateStr = new Date(item.time).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const div = document.createElement('div');
+        div.style.cssText = "background:#ffffff; border:1px solid var(--border-color); border-radius:4px; padding:4px 8px; margin-bottom:3px; display:flex; justify-content:space-between; align-items:center; font-size:0.78rem;";
+        div.innerHTML = `<span>🎁 <b>${item.title}</b> (Lv.${item.unlockLevel}解鎖)</span> <span style="color:#94a3b8; font-size:0.7rem;">${dateStr}</span>`;
+        container.appendChild(div);
+      });
     }
 
     function renderStudentQuestChecklist(stu) {
@@ -1361,7 +1694,7 @@
 
       saveData();
       renderStudents();
-      renderStudentQuestChecklist(stu);
+      viewStudentLogs(stu.id);
     }
 
     function renderModalLogList(stu) {
@@ -1414,7 +1747,7 @@
       document.getElementById('manualLogReason').value = '';
       saveData();
       renderStudents();
-      renderModalLogList(stu);
+      viewStudentLogs(stu.id);
     }
 
     function deleteSingleLog(index) {
@@ -1428,8 +1761,7 @@
         stu.logs.splice(index, 1);
         saveData();
         renderStudents();
-        renderModalLogList(stu);
-        renderStudentQuestChecklist(stu);
+        viewStudentLogs(stu.id);
       }
     }
 
@@ -1450,7 +1782,8 @@
         gender: genderSelect.value,
         level: 0,
         logs: [],
-        completedQuests: []
+        completedQuests: [],
+        redeemedPrizes: []
       });
 
       nameInput.value = '';
@@ -1562,7 +1895,8 @@
           gender: gender,
           level: 0,
           logs: [],
-          completedQuests: []
+          completedQuests: [],
+          redeemedPrizes: []
         });
       }
       return parsed;
@@ -1618,6 +1952,17 @@
           systemData.classes[item.className].students = item.students;
         }
       });
+
+      const classNames = Object.keys(systemData.classes);
+      if (Array.isArray(systemData.shopPrizes)) {
+        systemData.shopPrizes.forEach(prize => {
+          if (!prize.classAllocations) prize.classAllocations = {};
+          const avg = Math.floor(prize.totalStock / (classNames.length || 1));
+          classNames.forEach(c => {
+            if (prize.classAllocations[c] === undefined) prize.classAllocations[c] = avg;
+          });
+        });
+      }
 
       systemData.currentClass = detectedClasses[0].className;
       saveData();
