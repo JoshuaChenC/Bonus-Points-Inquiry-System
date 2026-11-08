@@ -96,8 +96,37 @@
       align-items: center;
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .dash-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
     }
     .dash-header h2 { font-size: 1.25rem; color: #b45309; font-weight: 800; }
+    
+    .tab-nav {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-tab {
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      color: var(--text-sub);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn-tab.active {
+      background: #d97706;
+      color: white;
+      border-color: #d97706;
+    }
+
     .btn-logout {
       background: #f1f5f9;
       border: 1px solid var(--border-color);
@@ -134,7 +163,7 @@
     }
     .hero-avatar-box {
       width: 210px;
-      aspect-ratio: 1000 / 1080; /* 配合 1000*1080 圖片比例 */
+      aspect-ratio: 1000 / 1080;
       background: #ffffff;
       border-radius: 12px;
       border: 1px solid var(--border-color);
@@ -269,6 +298,61 @@
     .log-delta { font-weight: 900; font-size: 1rem; }
     .log-plus { color: #16a34a; }
     .log-minus { color: #dc2626; }
+
+    /* 商場頁籤專屬樣式 */
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .shop-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .shop-img-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 2rem;
+    }
+    .shop-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .shop-title { font-size: 0.95rem; font-weight: 800; color: #1e293b; }
+    .shop-meta { font-size: 0.78rem; color: #b45309; font-weight: 700; }
+    .shop-stock { font-size: 0.75rem; color: var(--text-sub); }
+    .btn-redeem {
+      width: 100%;
+      padding: 6px;
+      background: #059669;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn-redeem:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -283,11 +367,18 @@
   <!-- 橫向平板專屬儀表板 -->
   <div id="dashboardView" class="dashboard-container">
     <div class="dash-header">
-      <h2 id="dashClassName">三年甲班</h2>
+      <div class="dash-header-left">
+        <h2 id="dashClassName">三年甲班</h2>
+        <div class="tab-nav">
+          <button class="btn-tab active" id="tabManualBtn" onclick="switchTab('manual')">冒險手冊</button>
+          <button class="btn-tab" id="tabShopBtn" onclick="switchTab('shop')">獎勵商城</button>
+        </div>
+      </div>
       <button class="btn-logout" onclick="studentLogout()">登出</button>
     </div>
 
-    <div class="dash-grid">
+    <!-- 冒險手冊頁籤內容 -->
+    <div id="manualTabContent" class="dash-grid">
       <!-- 左側角色面板 -->
       <div class="hero-panel" id="heroCardBorder">
         <div class="hero-name" id="dashStudentName">01. 林小明</div>
@@ -327,6 +418,14 @@
           <div class="section-title">⏳ 歷史戰績歷程</div>
           <div class="log-list" id="dashLogList"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- 獎勵商城頁籤內容 -->
+    <div id="shopTabContent" style="display: none;">
+      <div class="section-box">
+        <div class="section-title">班級獎勵兌換商城</div>
+        <div class="shop-grid" id="studentShopGrid"></div>
       </div>
     </div>
   </div>
@@ -371,7 +470,7 @@
     };
 
     let fbDB = null;
-    let systemData = { classes: {} };
+    let systemData = { classes: {}, shopPrizes: [] };
     let currentStudentSession = null;
 
     async function initStudentSystem() {
@@ -445,6 +544,27 @@
       refreshCurrentStudentData();
     }
 
+    // 頁籤切換邏輯
+    function switchTab(tabName) {
+      const manualContent = document.getElementById('manualTabContent');
+      const shopContent = document.getElementById('shopTabContent');
+      const btnManual = document.getElementById('tabManualBtn');
+      const btnShop = document.getElementById('tabShopBtn');
+
+      if (tabName === 'manual') {
+        manualContent.style.display = 'grid';
+        shopContent.style.display = 'none';
+        btnManual.className = 'btn-tab active';
+        btnShop.className = 'btn-tab';
+      } else {
+        manualContent.style.display = 'none';
+        shopContent.style.display = 'block';
+        btnShop.className = 'btn-tab active';
+        btnManual.className = 'btn-tab';
+        renderStudentShopView();
+      }
+    }
+
     function refreshCurrentStudentData() {
       if (!currentStudentSession) return;
       const { className, studentId } = currentStudentSession;
@@ -485,6 +605,112 @@
 
       renderStudentTaskColumns(cls.quests || [], stu.completedQuests || []);
       renderStudentLogs(stu.logs || []);
+      renderStudentShopView();
+    }
+
+    // 學生端商城檢視與兌換
+    function renderStudentShopView() {
+      if (!currentStudentSession) return;
+      const { className, studentId } = currentStudentSession;
+      const cls = systemData.classes[className];
+      if (!cls) return;
+      const students = Array.isArray(cls.students) ? cls.students : Object.values(cls.students);
+      const stu = students.find(s => s.id === studentId);
+      if (!stu) return;
+
+      const gridEl = document.getElementById('studentShopGrid');
+      gridEl.innerHTML = '';
+
+      let prizes = Array.isArray(systemData.shopPrizes) ? [...systemData.shopPrizes] : [];
+      prizes.sort((a, b) => a.unlockLevel - b.unlockLevel);
+
+      if (prizes.length === 0) {
+        gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sub); padding: 30px;">商城目前尚無上架商品。</div>`;
+        return;
+      }
+
+      if (!Array.isArray(stu.redeemedPrizes)) stu.redeemedPrizes = [];
+      const redeemedIds = stu.redeemedPrizes.map(item => item.prizeId);
+
+      prizes.forEach(p => {
+        if (!p.classAllocations) p.classAllocations = {};
+        const classStock = p.classAllocations[className] !== undefined ? p.classAllocations[className] : 0;
+        const isUnlocked = stu.level >= p.unlockLevel;
+        const hasStock = classStock > 0;
+        const alreadyRedeemed = redeemedIds.includes(p.id);
+        const canRedeem = isUnlocked && hasStock && !alreadyRedeemed;
+
+        const imgBox = p.image ? `<img src="${p.image}" alt="${p.title}" />` : `🎁`;
+
+        let btnText = '立即兌換';
+        if (alreadyRedeemed) btnText = '已兌換';
+        else if (!isUnlocked) btnText = '等級未達';
+        else if (!hasStock) btnText = '已兌完';
+
+        const card = document.createElement('div');
+        card.className = 'shop-card';
+        card.style.opacity = canRedeem ? '1' : '0.65';
+        card.innerHTML = `
+          <div class="shop-img-box">${imgBox}</div>
+          <div class="shop-title">${p.title}</div>
+          <div class="shop-meta">需達 Lv. ${p.unlockLevel}</div>
+          <div class="shop-stock">班級剩餘庫存: ${classStock} 個</div>
+          <button class="btn-redeem" ${!canRedeem ? 'disabled' : ''} onclick="studentRedeemPrize(${p.id})">
+            ${btnText}
+          </button>
+        `;
+        gridEl.appendChild(card);
+      });
+    }
+
+    function studentRedeemPrize(prizeId) {
+      if (!currentStudentSession) return;
+      const { className, studentId } = currentStudentSession;
+      const cls = systemData.classes[className];
+      const students = Array.isArray(cls.students) ? cls.students : Object.values(cls.students);
+      const stu = students.find(s => s.id === studentId);
+      const prize = (systemData.shopPrizes || []).find(p => p.id === prizeId);
+
+      if (!stu || !prize) return;
+
+      if (!prize.classAllocations) prize.classAllocations = {};
+      const classStock = prize.classAllocations[className] || 0;
+
+      if (!Array.isArray(stu.redeemedPrizes)) stu.redeemedPrizes = [];
+      if (stu.redeemedPrizes.some(item => item.prizeId === prizeId)) return alert("此商品您已經兌換過了！");
+      if (stu.level < prize.unlockLevel) return alert("等級未達，尚未解鎖此獎品！");
+      if (classStock <= 0) return alert("該班此獎品庫存已發完！");
+
+      if (confirm(`確定要兌換【${prize.title}】嗎？`)) {
+        prize.classAllocations[className] = classStock - 1;
+
+        stu.redeemedPrizes.unshift({
+          id: Date.now(),
+          prizeId: prize.id,
+          time: Date.now(),
+          title: prize.title,
+          unlockLevel: prize.unlockLevel
+        });
+
+        if (!Array.isArray(stu.logs)) stu.logs = [];
+        stu.logs.unshift({
+          id: Date.now() + Math.random(),
+          time: Date.now(),
+          delta: 0,
+          reason: `兌換獎品：${prize.title}`
+        });
+
+        // 寫入 Firebase 同步
+        try {
+          if (fbDB) {
+            fbDB.ref('classroom_data').set(systemData);
+          }
+        } catch (e) {}
+
+        localStorage.setItem('hero_quest_layered_v7', JSON.stringify(systemData));
+        alert(`🎉 成功兌換【${prize.title}】！請向老師領取獎勵。`);
+        refreshCurrentStudentData();
+      }
     }
 
     function renderStudentTaskColumns(allQuests, completedQuestIds) {
