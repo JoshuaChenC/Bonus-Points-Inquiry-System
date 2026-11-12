@@ -180,7 +180,24 @@
     }
     .hero-name { font-size: 1.25rem; font-weight: 900; color: #0f172a; }
     .hero-title { font-size: 1.1rem; color: #b45309; font-weight: 800; }
-    .hero-level { font-size: 1.45rem; font-weight: 900; color: #d97706; margin: 2px 0; }
+    .hero-level { 
+      font-size: 1.35rem; 
+      font-weight: 900; 
+      color: #d97706; 
+      margin: 2px 0; 
+      display: flex; 
+      gap: 10px; 
+      justify-content: center; 
+      align-items: center; 
+    }
+    .coin-badge {
+      font-size: 0.95rem;
+      color: #d97706;
+      background: #fef3c7;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid #fcd34d;
+    }
 
     .exp-container { width: 100%; margin-top: 4px; }
     .exp-bar-bg {
@@ -300,6 +317,16 @@
     .log-minus { color: #dc2626; }
 
     /* 商場頁籤專屬樣式 */
+    .shop-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      background: #ffffff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
     .shop-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -388,13 +415,16 @@
           <img id="heroAvatarImg" src="" alt="角色頭像" onerror="this.src='https://via.placeholder.com/1000x1080?text=Hero'">
         </div>
 
-        <div class="hero-level" id="dashStudentLevel">⚔️ Lv. 10</div>
+        <div class="hero-level">
+          <span id="dashStudentLevel">⚔️ Lv. 10</span>
+          <span class="coin-badge" id="dashStudentCoins">🪙 0</span>
+        </div>
 
         <div class="exp-container">
           <div class="exp-bar-bg">
             <div id="dashExpFill" class="exp-bar-fill" style="width: 20%;"></div>
           </div>
-          <div class="exp-text" id="dashExpText">進度: 10 / 200 等</div>
+          <div class="exp-text" id="dashExpText">: 10 / 200 等</div>
         </div>
       </div>
 
@@ -424,7 +454,10 @@
     <!-- 獎勵商城頁籤內容 -->
     <div id="shopTabContent" style="display: none;">
       <div class="section-box">
-        <div class="section-title">班級獎勵兌換商城</div>
+        <div class="shop-header-bar">
+          <div class="section-title" style="margin-bottom: 0;">班級獎勵兌換商城</div>
+          <div class="coin-badge" id="shopStudentCoins" style="font-size: 1rem; font-weight: 800;">🪙 擁有金幣: 0</div>
+        </div>
         <div class="shop-grid" id="studentShopGrid"></div>
       </div>
     </div>
@@ -544,7 +577,6 @@
       refreshCurrentStudentData();
     }
 
-    // 頁籤切換邏輯
     function switchTab(tabName) {
       const manualContent = document.getElementById('manualTabContent');
       const shopContent = document.getElementById('shopTabContent');
@@ -583,6 +615,8 @@
         return;
       }
 
+      if (stu.coins === undefined) stu.coins = 0;
+
       document.getElementById('dashClassName').textContent = className;
       document.getElementById('dashStudentName').textContent = stu.name;
 
@@ -590,6 +624,8 @@
       const title = EVOLUTION_TIERS[tier][stu.gender];
       document.getElementById('dashStudentTitle').textContent = title;
       document.getElementById('dashStudentLevel').textContent = `⚔️ Lv. ${stu.level}`;
+      document.getElementById('dashStudentCoins').textContent = `🪙 ${stu.coins}`;
+      document.getElementById('shopStudentCoins').textContent = `🪙 擁有金幣: ${stu.coins}`;
 
       const progressPercent = Math.min(100, (stu.level / 200) * 100);
       document.getElementById('dashExpFill').style.width = `${progressPercent}%`;
@@ -617,6 +653,9 @@
       const students = Array.isArray(cls.students) ? cls.students : Object.values(cls.students);
       const stu = students.find(s => s.id === studentId);
       if (!stu) return;
+      if (stu.coins === undefined) stu.coins = 0;
+
+      document.getElementById('shopStudentCoins').textContent = `🪙 擁有金幣: ${stu.coins}`;
 
       const gridEl = document.getElementById('studentShopGrid');
       gridEl.innerHTML = '';
@@ -635,7 +674,9 @@
       prizes.forEach(p => {
         if (!p.classAllocations) p.classAllocations = {};
         const classStock = p.classAllocations[className] !== undefined ? p.classAllocations[className] : 0;
-        const isUnlocked = stu.level >= p.unlockLevel;
+        
+        const isUnlocked = stu.level >= p.unlockLevel; // 等級達標解鎖
+        const canAfford = stu.coins >= p.cost;         // 金幣足夠購買
         const hasStock = classStock > 0;
         const alreadyRedeemed = redeemedIds.includes(p.id);
         const canRedeem = isUnlocked && hasStock && !alreadyRedeemed;
@@ -644,7 +685,8 @@
 
         let btnText = '立即兌換';
         if (alreadyRedeemed) btnText = '已兌換';
-        else if (!isUnlocked) btnText = '等級未達';
+        else if (!isUnlocked) btnText = `<span style="color: #ef4444; font-weight: 700;">需達 Lv.${p.unlockLevel} 等解鎖</span>`;
+        else if (!canAfford) btnText = '金幣不足';
         else if (!hasStock) btnText = '已兌完';
 
         const card = document.createElement('div');
@@ -653,7 +695,7 @@
         card.innerHTML = `
           <div class="shop-img-box">${imgBox}</div>
           <div class="shop-title">${p.title}</div>
-          <div class="shop-meta">需達 Lv. ${p.unlockLevel}</div>
+          <div class="shop-meta">🪙 ${p.cost} 金幣</div>
           <div class="shop-stock">班級剩餘庫存: ${classStock} 個</div>
           <button class="btn-redeem" ${!canRedeem ? 'disabled' : ''} onclick="studentRedeemPrize(${p.id})">
             ${btnText}
@@ -672,6 +714,7 @@
       const prize = (systemData.shopPrizes || []).find(p => p.id === prizeId);
 
       if (!stu || !prize) return;
+      if (stu.coins === undefined) stu.coins = 0;
 
       if (!prize.classAllocations) prize.classAllocations = {};
       const classStock = prize.classAllocations[className] || 0;
@@ -679,9 +722,11 @@
       if (!Array.isArray(stu.redeemedPrizes)) stu.redeemedPrizes = [];
       if (stu.redeemedPrizes.some(item => item.prizeId === prizeId)) return alert("此商品您已經兌換過了！");
       if (stu.level < prize.unlockLevel) return alert("等級未達，尚未解鎖此獎品！");
+      if (stu.coins < prize.cost) return alert("金幣不足，無法兌換！");
       if (classStock <= 0) return alert("該班此獎品庫存已發完！");
 
-      if (confirm(`確定要兌換【${prize.title}】嗎？`)) {
+      if (confirm(`確定要花費 🪙${prize.cost} 金幣兌換【${prize.title}】嗎？`)) {
+        stu.coins -= prize.cost;
         prize.classAllocations[className] = classStock - 1;
 
         stu.redeemedPrizes.unshift({
@@ -689,7 +734,7 @@
           prizeId: prize.id,
           time: Date.now(),
           title: prize.title,
-          unlockLevel: prize.unlockLevel
+          cost: prize.cost
         });
 
         if (!Array.isArray(stu.logs)) stu.logs = [];
@@ -697,10 +742,9 @@
           id: Date.now() + Math.random(),
           time: Date.now(),
           delta: 0,
-          reason: `兌換獎品：${prize.title}`
+          reason: `花費 🪙${prize.cost} 兌換：${prize.title}`
         });
 
-        // 寫入 Firebase 同步
         try {
           if (fbDB) {
             fbDB.ref('classroom_data').set(systemData);
