@@ -455,7 +455,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 160px;
+      max-height: 180px;
       margin: 6px 0;
     }
     .log-item {
@@ -467,14 +467,16 @@
       justify-content: space-between;
       align-items: center;
       font-size: 0.8rem;
+      gap: 8px;
     }
-    .log-info { display: flex; align-items: center; gap: 8px; }
+    .log-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .log-time { color: #94a3b8; font-size: 0.7rem; }
     .log-reason { color: #1e293b; font-weight: 600; }
-    .log-action { display: flex; align-items: center; gap: 8px; }
+    .log-action { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .log-delta { font-weight: 800; }
     .log-plus { color: #16a34a; }
     .log-minus { color: #dc2626; }
+    .log-coin { font-size: 0.75rem; font-weight: 700; color: #b45309; background: #fef3c7; padding: 1px 6px; border-radius: 8px; }
     .btn-del-log {
       background: transparent;
       color: #94a3b8;
@@ -517,9 +519,9 @@
         <select id="classSelect" class="class-select-dropdown" onchange="switchClass(this.value)"></select>
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-        <button class="btn-shop" onclick="openShopManagerModal()">獎勵商城管理</button>
-        <button class="btn-tracking" onclick="openTrackingModal()">任務未完成名單</button>
-        <button class="btn-quest" onclick="openQuestManagerModal()">任務設定</button>
+        <button class="btn-shop" onclick="openShopManagerModal()">🎁 獎勵商城管理</button>
+        <button class="btn-tracking" onclick="openTrackingModal()">📋 未完成名單</button>
+        <button class="btn-quest" onclick="openQuestManagerModal()">🎯 任務設定</button>
       </div>
     </div>
 
@@ -528,8 +530,8 @@
         <button class="btn-view-toggle" id="viewToggleBtn" onclick="toggleViewMode()">切換為表格檢視</button>
         <button class="btn-sort-rank" onclick="sortStudents()">戰力榜排序</button>
         <button class="btn-sort-num" onclick="sortByNumber()">座號排序</button>
-        <button class="btn-excel" onclick="triggerExcelUpload()">匯入金幣 (Excel)</button>
-        <button class="btn-tool" onclick="openPlusModal(null, true)">全班加等</button>
+        <button class="btn-excel" onclick="triggerExcelUpload()">📥 匯入名單與金幣 (Excel)</button>
+        <button class="btn-tool" onclick="openPlusModal(null, true)">全班加分</button>
         <button class="btn-danger" onclick="deleteCurrentClass()">刪除班級</button>
       </div>
       <div style="display:flex; gap:6px; flex-wrap: wrap;">
@@ -560,11 +562,11 @@
     </div>
   </main>
 
-  <!-- 獎勵商城管理 Modal -->
+  <!-- 🎁 獎勵商城與各班配額管理 Modal -->
   <div id="shopManagerModal" class="modal-overlay" style="display: none;" onclick="closeShopManagerModal(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <h3>獎勵商城管理</h3>
+        <h3>🎁 獎勵商城與配額管理</h3>
         <button class="modal-close" onclick="closeShopManagerModal()">✖</button>
       </div>
       
@@ -642,7 +644,7 @@
       <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px;">
         <label style="font-size: 0.8rem; color: var(--text-sub); display: block; margin-bottom: 4px; font-weight: 700;">增加點數：</label>
         <div style="display: flex; gap: 6px;">
-          <input type="number" id="plusDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;">
+          <input type="number" id="plusDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;" onkeydown="if(event.key==='Enter') submitPlusWithCustomReason()">
           <span style="font-size: 0.85rem; color: var(--text-sub); align-self: center;">分</span>
         </div>
       </div>
@@ -678,7 +680,7 @@
       <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px;">
         <label style="font-size: 0.8rem; color: var(--text-sub); display: block; margin-bottom: 4px; font-weight: 700;">扣除點數：</label>
         <div style="display: flex; gap: 6px;">
-          <input type="number" id="minusDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;">
+          <input type="number" id="minusDeltaInput" value="1" style="width: 100px; font-weight: bold; text-align: center;" onkeydown="if(event.key==='Enter') submitMinusWithCustomReason()">
           <span style="font-size: 0.85rem; color: var(--text-sub); align-self: center;">分</span>
         </div>
       </div>
@@ -711,7 +713,7 @@
       </div>
 
       <!-- 手動調整金幣專區 -->
-      <div style="background: #fef3c7; padding: 10px; border-radius: 8px; border: 1px solid #fcd34d; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="background: #fef3c7; padding: 10px; border-radius: 8px; border: 1px solid #fcd34d; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
         <span style="font-size: 0.85rem; font-weight: 800; color: #b45309;">💰 金幣管理：</span>
         <div style="display: flex; gap: 6px; align-items: center;">
           <input type="number" id="manualCoinInput" placeholder="數量" style="width: 80px; text-align: center; font-weight: bold;">
@@ -794,24 +796,35 @@
       ]
     };
 
+    function ensureStudentShape(stu) {
+      const s = (stu && typeof stu === 'object') ? stu : {};
+      s.id = s.id || Date.now() + Math.floor(Math.random() * 100000);
+      s.name = String(s.name || '未命名勇者');
+      s.gender = s.gender === 'girl' ? 'girl' : 'boy';
+      s.level = Number.isFinite(Number(s.level)) ? Math.max(0, Math.min(200, Number(s.level))) : 0;
+      s.coins = Number.isFinite(Number(s.coins)) ? Math.max(0, Number(s.coins)) : 0;
+      s.logs = Array.isArray(s.logs) ? s.logs : (s.logs && typeof s.logs === 'object' ? Object.values(s.logs) : []);
+      s.completedQuests = Array.isArray(s.completedQuests) ? s.completedQuests : (s.completedQuests && typeof s.completedQuests === 'object' ? Object.values(s.completedQuests) : []);
+      s.redeemedPrizes = Array.isArray(s.redeemedPrizes) ? s.redeemedPrizes : (s.redeemedPrizes && typeof s.redeemedPrizes === 'object' ? Object.values(s.redeemedPrizes) : []);
+      return s;
+    }
+
     function normalizeData(raw) {
       if (!raw || typeof raw !== 'object' || !raw.classes) {
         return { currentClass: "", updatedAt: 0, classes: {}, shopPrizes: [] };
       }
       let currentClass = raw.currentClass || "";
       let classes = {};
-      let shopPrizes = Array.isArray(raw.shopPrizes) ? raw.shopPrizes : [];
+      let shopPrizes = Array.isArray(raw.shopPrizes) ? raw.shopPrizes : (raw.shopPrizes && typeof raw.shopPrizes === 'object' ? Object.values(raw.shopPrizes) : []);
 
       Object.keys(raw.classes).forEach(cName => {
-        let cVal = raw.classes[cName];
-        let students = Array.isArray(cVal.students) ? cVal.students : (cVal.students ? Object.values(cVal.students) : []);
-        students.forEach(s => {
-          if (s.coins === undefined) s.coins = 0;
-        });
-        let quests = Array.isArray(cVal.quests) ? cVal.quests : [
+        let cVal = raw.classes[cName] || {};
+        let rawStudents = Array.isArray(cVal.students) ? cVal.students : (cVal.students ? Object.values(cVal.students) : []);
+        let students = rawStudents.map(ensureStudentShape);
+        let quests = Array.isArray(cVal.quests) ? cVal.quests : (cVal.quests && typeof cVal.quests === 'object' ? Object.values(cVal.quests) : [
           { id: 1, title: "完成習作", reward: 2 },
           { id: 2, title: "完成筆記", reward: 3 }
-        ];
+        ]);
 
         classes[cName] = {
           name: cName,
@@ -883,6 +896,15 @@
             localStorage.setItem('hero_quest_layered_v7', JSON.stringify(systemData));
             renderClassSelector();
             renderStudents();
+            if (viewingStudentId) {
+              const currentStu = getCurrentStudents().find(s => s.id === viewingStudentId);
+              if (currentStu) {
+                renderStudentShop(currentStu);
+                renderStudentRedeemHistory(currentStu);
+                renderStudentQuestChecklist(currentStu);
+                renderModalLogList(currentStu);
+              }
+            }
             updateSyncUI(true, "雲端已同步");
           } else {
             if (!systemData.classes || Object.keys(systemData.classes).length === 0) {
@@ -912,6 +934,7 @@
       const cls = systemData.classes[systemData.currentClass];
       if (!Array.isArray(cls.quests)) cls.quests = [];
       if (!Array.isArray(cls.students)) cls.students = cls.students ? Object.values(cls.students) : [];
+      cls.students = cls.students.map(ensureStudentShape);
       return cls;
     }
 
@@ -919,10 +942,26 @@
       return getCurrentClassObj().students;
     }
 
+    // 統一寫入單筆歷程，確保每次加減分、任務或金幣變動都完整留存
+    function appendStudentLog(stu, { delta = 0, coinDelta = 0, reason = "", questId = null, prizeId = null }) {
+      const s = ensureStudentShape(stu);
+      s.logs.unshift({
+        id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        time: Date.now(),
+        delta: Number(delta) || 0,
+        coinDelta: Number(coinDelta) || 0,
+        reason: String(reason || "分數調整"),
+        questId: questId,
+        prizeId: prizeId
+      });
+      return s;
+    }
+
     function saveData() {
-      if (!hasLoadedCloudOnce && isCloudActive) return;
       systemData.updatedAt = Date.now();
       localStorage.setItem('hero_quest_layered_v7', JSON.stringify(systemData));
+
+      if (!hasLoadedCloudOnce && isCloudActive) return;
       
       if (isCloudActive && fbDB) {
         isSaving = true;
@@ -1045,7 +1084,7 @@
       }
     }
 
-    // 🎁 獎勵商城管理邏輯 (含總庫存剩餘數量統計與「各班剩餘庫存」標題)
+    // 🎁 獎勵商城管理邏輯
     function openShopManagerModal() {
       renderGlobalPrizeList();
       document.getElementById('shopManagerModal').style.display = 'flex';
@@ -1165,7 +1204,6 @@
         let allocHtml = '';
         classNames.forEach(cName => {
           let count = p.classAllocations[cName] !== undefined ? p.classAllocations[cName] : 0;
-          // 💡 依要求：移除「(剩多少)」，改為乾淨的「班級名稱：數量」格式
           allocHtml += `
             <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; margin-top: 3px; background: #ffffff; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border-color);">
               <span>${cName}：</span>
@@ -1178,7 +1216,7 @@
 
         let remainderHtml = '';
         if (remainder > 0) {
-          remainderHtml = `<div style="font-size: 0.75rem; color: #dc2626; font-weight: 700; margin-top: 4px;"> 已發：${remainder} 個</div>`;
+          remainderHtml = `<div style="font-size: 0.75rem; color: #dc2626; font-weight: 700; margin-top: 4px;">⚠️ 尚有未分配庫存：${remainder} 個</div>`;
         } else if (remainder < 0) {
           remainderHtml = `<div style="font-size: 0.75rem; color: #dc2626; font-weight: 700; margin-top: 4px;">⚠️ 各班分配總和 (${allocatedSum}) 超過總庫存 (${p.totalStock})！</div>`;
         } else {
@@ -1196,12 +1234,10 @@
             <input type="number" class="editable-input" style="width: 70px;" value="${p.unlockLevel}" placeholder="解鎖" title="解鎖等級" onchange="updatePrizeField(${p.id}, 'unlockLevel', this.value)">
             <input type="number" class="editable-input" style="width: 70px;" value="${p.cost}" placeholder="金幣" title="兌換所需金幣" onchange="updatePrizeField(${p.id}, 'cost', this.value)">
             <input type="number" class="editable-input" style="width: 60px;" value="${p.totalStock}" placeholder="庫存" title="總庫存" onchange="updatePrizeField(${p.id}, 'totalStock', this.value)">
-            <!-- 💡 依要求：在「尚有未分配庫存」右邊新增總庫存剩餘數量統計 -->
             <span style="font-size: 0.78rem; font-weight: 700; color: #b45309; background: #fef3c7; padding: 4px 8px; border-radius: 4px;" title="所有班級加起來的總剩餘庫存">總庫存剩餘: ${allocatedSum}</span>
             <button class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteGlobalPrize(${p.id})">刪除</button>
           </div>
           <div style="background: #f8fafc; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
-            <!-- 💡 依要求：將標題改為「各班剩餘庫存」 -->
             <div style="font-size: 0.75rem; font-weight: 700; color: #b45309; margin-bottom: 2px;">各班剩餘庫存：</div>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px;">
               ${allocHtml}
@@ -1373,15 +1409,15 @@
     function applyPlusAction(delta, reason) {
       if (!currentScoreAction) return;
       const { studentId, isBatch } = currentScoreAction;
+      let leveledUpAny = false;
 
       if (isBatch) {
         getCurrentStudents().forEach(stu => {
           const oldTier = Math.floor(stu.level / 20);
           stu.level = Math.max(0, Math.min(200, stu.level + delta));
           const newTier = Math.floor(stu.level / 20);
-          if (!Array.isArray(stu.logs)) stu.logs = [];
-          stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
-          if (newTier > oldTier) playLevelUpSound();
+          appendStudentLog(stu, { delta: delta, coinDelta: 0, reason: reason });
+          if (newTier > oldTier) leveledUpAny = true;
         });
       } else {
         const stu = getCurrentStudents().find(s => s.id === studentId);
@@ -1389,11 +1425,11 @@
           const oldTier = Math.floor(stu.level / 20);
           stu.level = Math.max(0, Math.min(200, stu.level + delta));
           const newTier = Math.floor(stu.level / 20);
-          if (!Array.isArray(stu.logs)) stu.logs = [];
-          stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
-          if (newTier > oldTier) playLevelUpSound();
+          appendStudentLog(stu, { delta: delta, coinDelta: 0, reason: reason });
+          if (newTier > oldTier) leveledUpAny = true;
         }
       }
+      if (leveledUpAny) playLevelUpSound();
       closePlusModal();
       saveData();
       renderStudents();
@@ -1436,8 +1472,7 @@
       const stu = getCurrentStudents().find(s => s.id === studentId);
       if (stu) {
         stu.level = Math.max(0, Math.min(200, stu.level + delta));
-        if (!Array.isArray(stu.logs)) stu.logs = [];
-        stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+        appendStudentLog(stu, { delta: delta, coinDelta: 0, reason: reason });
       }
       closeMinusModal();
       saveData();
@@ -1453,11 +1488,8 @@
       const val = parseInt(document.getElementById('manualCoinInput').value, 10);
       if (isNaN(val) || val <= 0) return alert("請輸入有效的金幣數量！");
 
-      if (stu.coins === undefined) stu.coins = 0;
-      stu.coins += val;
-      if (!Array.isArray(stu.logs)) stu.logs = [];
-      // 💡 依要求：精簡為「獲得金幣」
-      stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: 0, coinDelta: val, reason: `獲得金幣 +${val}` });
+      stu.coins = (stu.coins || 0) + val;
+      appendStudentLog(stu, { delta: 0, coinDelta: val, reason: `獲得金幣 +${val}` });
 
       document.getElementById('manualCoinInput').value = '';
       saveData();
@@ -1473,10 +1505,10 @@
       const val = parseInt(document.getElementById('manualCoinInput').value, 10);
       if (isNaN(val) || val <= 0) return alert("請輸入有效的金幣數量！");
 
-      if (stu.coins === undefined) stu.coins = 0;
-      stu.coins = Math.max(0, stu.coins - val);
-      if (!Array.isArray(stu.logs)) stu.logs = [];
-      stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: 0, coinDelta: -val, reason: `扣除金幣 -${val}` });
+      const prevCoins = stu.coins || 0;
+      const actualSub = Math.min(prevCoins, val);
+      stu.coins = Math.max(0, prevCoins - val);
+      appendStudentLog(stu, { delta: 0, coinDelta: -actualSub, reason: `扣除金幣 -${actualSub}` });
 
       document.getElementById('manualCoinInput').value = '';
       saveData();
@@ -1501,7 +1533,6 @@
         }
 
         students.forEach(stu => {
-          if (stu.coins === undefined) stu.coins = 0;
           const tier = Math.min(Math.floor(stu.level / 20), 10);
           const title = EVOLUTION_TIERS[tier][stu.gender];
           const isMax = stu.level >= 200;
@@ -1552,7 +1583,6 @@
         }
 
         students.forEach(stu => {
-          if (stu.coins === undefined) stu.coins = 0;
           const tier = Math.min(Math.floor(stu.level / 20), 10);
           const title = EVOLUTION_TIERS[tier][stu.gender];
           const genderText = stu.gender === 'boy' ? '男' : '女';
@@ -1584,11 +1614,11 @@
       }
     }
 
-    // 📜 學生冒險歷程與商城兌換 (支援金幣兌換)
+    // 📜 學生冒險歷程與商城兌換
     function viewStudentLogs(studentId) {
       const stu = getCurrentStudents().find(s => s.id === studentId);
       if (!stu) return;
-      if (stu.coins === undefined) stu.coins = 0;
+      ensureStudentShape(stu);
 
       viewingStudentId = studentId;
       document.getElementById('modalStudentTitle').textContent = `【${stu.name}】冒險歷程 (等級: Lv.${stu.level} | 金幣: 🪙${stu.coins})`;
@@ -1668,24 +1698,23 @@
       if (classStock <= 0) return alert("該班此獎品庫存已發完！");
 
       if (confirm(`確定要幫【${stu.name}】花費 🪙${prize.cost} 金幣兌換【${prize.title}】嗎？`)) {
+        const redeemRecordId = Date.now();
         stu.coins -= prize.cost;
         prize.classAllocations[currentClassName] = classStock - 1;
 
         stu.redeemedPrizes.unshift({
-          id: Date.now(),
+          id: redeemRecordId,
           prizeId: prize.id,
           time: Date.now(),
           title: prize.title,
           cost: prize.cost
         });
 
-        if (!Array.isArray(stu.logs)) stu.logs = [];
-        stu.logs.unshift({
-          id: Date.now() + Math.random(),
-          time: Date.now(),
+        appendStudentLog(stu, {
           delta: 0,
           coinDelta: -prize.cost,
-          reason: `花費 🪙${prize.cost} 兌換：${prize.title}`
+          reason: `花費 🪙${prize.cost} 兌換：${prize.title}`,
+          prizeId: prize.id
         });
 
         saveData();
@@ -1754,23 +1783,21 @@
         const oldTier = Math.floor(stu.level / 20);
         stu.level = Math.max(0, Math.min(200, stu.level + quest.reward));
         const newTier = Math.floor(stu.level / 20);
-        if (!Array.isArray(stu.logs)) stu.logs = [];
-        stu.logs.unshift({
-          id: Date.now() + Math.random(),
-          time: Date.now(),
+        appendStudentLog(stu, {
           delta: quest.reward,
-          reason: `完成任務：${quest.title}`
+          coinDelta: 0,
+          reason: `完成任務：${quest.title}`,
+          questId: quest.id
         });
         if (newTier > oldTier) playLevelUpSound();
       } else {
         stu.completedQuests = stu.completedQuests.filter(id => id !== questId);
         stu.level = Math.max(0, Math.min(200, stu.level - quest.reward));
-        if (!Array.isArray(stu.logs)) stu.logs = [];
-        stu.logs.unshift({
-          id: Date.now() + Math.random(),
-          time: Date.now(),
+        appendStudentLog(stu, {
           delta: -quest.reward,
-          reason: `取消任務：${quest.title}`
+          coinDelta: 0,
+          reason: `取消任務：${quest.title}`,
+          questId: quest.id
         });
       }
 
@@ -1790,17 +1817,27 @@
       }
 
       logs.forEach((log, index) => {
-        const dateStr = new Date(log.time).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-        const isPlus = log.delta > 0;
+        const dateStr = new Date(log.time || Date.now()).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const deltaNum = Number(log.delta) || 0;
+        const coinDeltaNum = Number(log.coinDelta) || 0;
+        const isPlus = deltaNum > 0;
+        const deltaBadge = deltaNum !== 0
+          ? `<span class="log-delta ${isPlus ? 'log-plus' : 'log-minus'}">${isPlus ? '+' : ''}${deltaNum}分</span>`
+          : '';
+        const coinBadge = coinDeltaNum !== 0
+          ? `<span class="log-coin">🪙 ${coinDeltaNum > 0 ? '+' : ''}${coinDeltaNum}</span>`
+          : '';
+
         const item = document.createElement('div');
         item.className = 'log-item';
         item.innerHTML = `
           <div class="log-info">
             <span class="log-time">${dateStr}</span>
-            <span class="log-reason">${log.reason}</span>
+            <span class="log-reason">${log.reason || '分數調整'}</span>
           </div>
           <div class="log-action">
-            <span class="log-delta ${isPlus ? 'log-plus' : 'log-minus'}">${isPlus ? '+' : ''}${log.delta || ''}</span>
+            ${deltaBadge}
+            ${coinBadge}
             <button class="btn-del-log" title="刪除" onclick="deleteSingleLog(${index})">✖</button>
           </div>
         `;
@@ -1821,8 +1858,7 @@
       stu.level = Math.max(0, Math.min(200, stu.level + delta));
       const newTier = Math.floor(stu.level / 20);
 
-      if (!Array.isArray(stu.logs)) stu.logs = [];
-      stu.logs.unshift({ id: Date.now() + Math.random(), time: Date.now(), delta: delta, reason: reason });
+      appendStudentLog(stu, { delta: delta, coinDelta: 0, reason: reason });
       if (newTier > oldTier && delta > 0) playLevelUpSound();
 
       document.getElementById('manualLogDelta').value = '';
@@ -1832,36 +1868,40 @@
       viewStudentLogs(stu.id);
     }
 
-    // 💡 刪除歷程時同步自動還原金幣（或等級）
+    // 刪除歷程時同步還原金幣與點數
     function deleteSingleLog(index) {
       if (!viewingStudentId) return;
       const stu = getCurrentStudents().find(s => s.id === viewingStudentId);
       if (!stu || !stu.logs || !stu.logs[index]) return;
+      ensureStudentShape(stu);
 
       const log = stu.logs[index];
-      if (confirm(`確定要刪除「${log.reason}」？\n此動作將同步還原對應的點數或金幣。`)) {
-        if (log.coinDelta !== undefined) {
-          stu.coins = Math.max(0, stu.coins - log.coinDelta);
-        } else if (log.reason.includes("獲得金幣")) {
-          const match = log.reason.match(/\+(\d+)/);
-          if (match) stu.coins = Math.max(0, stu.coins - parseInt(match[1], 10));
-        } else if (log.reason.includes("扣除金幣")) {
-          const match = log.reason.match(/-(\d+)/);
-          if (match) stu.coins += parseInt(match[1], 10);
-        } else if (log.reason.includes("兌換獎品：")) {
-          const prizeName = log.reason.replace("兌換獎品：", "").trim();
-          const prize = (systemData.shopPrizes || []).find(p => p.title === prizeName);
+      const deltaNum = Number(log.delta) || 0;
+      const coinDeltaNum = Number(log.coinDelta) || 0;
+
+      if (confirm(`確定要刪除「${log.reason}」嗎？\n將同步還原對應的等級點數與金幣。`)) {
+        if (deltaNum !== 0) {
+          stu.level = Math.max(0, Math.min(200, stu.level - deltaNum));
+        }
+        if (coinDeltaNum !== 0) {
+          stu.coins = Math.max(0, stu.coins - coinDeltaNum);
+        }
+
+        if (log.questId && Array.isArray(stu.completedQuests)) {
+          stu.completedQuests = stu.completedQuests.filter(id => id !== log.questId);
+        }
+
+        if (log.prizeId) {
+          const prize = (systemData.shopPrizes || []).find(p => p.id === log.prizeId);
           if (prize) {
-            stu.coins += prize.cost;
             if (!prize.classAllocations) prize.classAllocations = {};
             const currentClassName = systemData.currentClass;
             prize.classAllocations[currentClassName] = (prize.classAllocations[currentClassName] || 0) + 1;
-            if (Array.isArray(stu.redeemedPrizes)) {
-              stu.redeemedPrizes = stu.redeemedPrizes.filter(rp => rp.prizeId !== prize.id);
-            }
           }
-        } else {
-          stu.level = Math.max(0, Math.min(200, stu.level - log.delta));
+          if (Array.isArray(stu.redeemedPrizes)) {
+            const idx = stu.redeemedPrizes.findIndex(rp => rp.prizeId === log.prizeId);
+            if (idx !== -1) stu.redeemedPrizes.splice(idx, 1);
+          }
         }
 
         stu.logs.splice(index, 1);
@@ -1882,7 +1922,7 @@
       const name = nameInput.value.trim();
       if (!name) return alert("請輸入學生姓名或座號！");
 
-      getCurrentStudents().push({
+      getCurrentStudents().push(ensureStudentShape({
         id: Date.now(),
         name: name,
         gender: genderSelect.value,
@@ -1891,7 +1931,7 @@
         logs: [],
         completedQuests: [],
         redeemedPrizes: []
-      });
+      }));
 
       nameInput.value = '';
       saveData();
@@ -1952,9 +1992,6 @@
       renderStudents();
     }
 
-    // ==========================================
-    // 💡 Excel 匯入金幣 (簡化文字為「獲得多少金幣」)
-    // ==========================================
     function parseExcelForCoinsAndStudents(worksheet, classObj) {
       const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       if (!rawRows || rawRows.length === 0) return;
@@ -1969,33 +2006,30 @@
         let student = classObj.students.find(s => s.name.includes(nameVal) || nameVal.includes(s.name.replace(/^\d+\.\s*/, '')));
         
         if (student) {
-          if (student.coins === undefined) student.coins = 0;
+          ensureStudentShape(student);
           student.coins += coinVal;
-          if (!Array.isArray(student.logs)) student.logs = [];
-          student.logs.unshift({
-            id: Date.now() + Math.random(),
-            time: Date.now(),
+          appendStudentLog(student, {
             delta: 0,
             coinDelta: coinVal,
             reason: `獲得金幣 +${coinVal}`
           });
         } else {
-          classObj.students.push({
+          const newStu = ensureStudentShape({
             id: Date.now() + Math.floor(Math.random() * 100000) + i,
             name: nameVal,
             gender: 'boy',
             level: 0,
             coins: coinVal,
-            logs: [{
-              id: Date.now() + Math.random(),
-              time: Date.now(),
-              delta: 0,
-              coinDelta: coinVal,
-              reason: `獲得金幣 +${coinVal}`
-            }],
+            logs: [],
             completedQuests: [],
             redeemedPrizes: []
           });
+          appendStudentLog(newStu, {
+            delta: 0,
+            coinDelta: coinVal,
+            reason: `獲得金幣 +${coinVal}`
+          });
+          classObj.students.push(newStu);
         }
       });
     }
